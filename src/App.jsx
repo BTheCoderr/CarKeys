@@ -979,46 +979,90 @@ function GameCanvas(props) {
 
       const desiredX = laneX(laneRef.current)
       const laneDelta = desiredX - carX
-      carX += laneDelta * 0.13
-      carLean += ((laneDelta * 1.1) - carLean) * 0.18
+      carX += laneDelta * 0.15
+      carLean += ((laneDelta * 1.35) - carLean) * 0.20
       const pulseAge = performance.now() - pulseRef.current
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
       const successAge = performance.now() - successRef.current
-      const successPop = successAge < 420 ? Math.max(0, 1 - successAge / 420) : 0
-      const carScale = Math.min(w / 360, 1.32) * (1 + successPop * 0.06)
+      const successPop = successAge < 500 ? Math.max(0, 1 - successAge / 500) : 0
+      const carScale = Math.min(w / 360, 1.32) * (1 + successPop * 0.075)
+
+      // Sideways movement should read like a little arcade drift, not a teleport.
+      if (Math.abs(laneDelta) > 0.012) {
+        const driftAlpha = Math.min(0.42, Math.abs(laneDelta) * 1.5)
+        ctx.save()
+        ctx.globalAlpha = driftAlpha
+        ctx.strokeStyle = '#d8f6ff'
+        ctx.lineWidth = 4
+        ctx.lineCap = 'round'
+        for (let i = 0; i < 3; i += 1) {
+          const spread = (i - 1) * 13
+          ctx.beginPath()
+          ctx.moveTo(w * carX + spread, h * 0.835)
+          ctx.lineTo(w * carX + spread - laneDelta * w * 0.45, h * (0.89 + i * 0.006))
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
 
       if (successPop > 0) {
         const boostColor = COLORS[lastHitRef.current] || '#fff27a'
+        const burstX = w * laneX(lastHitRef.current)
+        const burstY = h * 0.69
+        const burstOut = 1 - successPop
 
+        // A successful note visibly bursts on the road where the car is headed.
         ctx.save()
-        ctx.globalAlpha = successPop * 0.72
+        ctx.globalAlpha = Math.min(1, successPop * 1.25)
         ctx.strokeStyle = boostColor
-        ctx.lineWidth = 9
-        ctx.lineCap = 'round'
+        ctx.lineWidth = 6
         ctx.shadowColor = boostColor
-        ctx.shadowBlur = 18
+        ctx.shadowBlur = 26
         ctx.beginPath()
-        ctx.moveTo(w * carX - 20, h * 0.85)
-        ctx.lineTo(w * carX - 28, h * 0.91 + (1 - successPop) * 18)
-        ctx.moveTo(w * carX + 20, h * 0.85)
-        ctx.lineTo(w * carX + 28, h * 0.91 + (1 - successPop) * 18)
+        ctx.arc(burstX, burstY, 24 + burstOut * 48, 0, Math.PI * 2)
         ctx.stroke()
         ctx.restore()
 
         ctx.save()
         ctx.globalAlpha = successPop
         ctx.shadowColor = boostColor
-        ctx.shadowBlur = 24
-        ctx.fillStyle = boostColor
-        for (let i = 0; i < 9; i += 1) {
-          const angle = (Math.PI * 2 * i) / 9
-          const distance = 52 + (1 - successPop) * 34
-          const sx = w * carX + Math.cos(angle) * distance
-          const sy = h * 0.82 + Math.sin(angle) * distance * 0.55
+        ctx.shadowBlur = 18
+        for (let i = 0; i < 12; i += 1) {
+          const angle = (Math.PI * 2 * i) / 12
+          const distance = 20 + burstOut * (45 + (i % 3) * 9)
+          const sx = burstX + Math.cos(angle) * distance
+          const sy = burstY + Math.sin(angle) * distance * 0.64
+          ctx.fillStyle = i % 2 ? '#ffffff' : boostColor
           ctx.beginPath()
           ctx.arc(sx, sy, 3 + (i % 3), 0, Math.PI * 2)
           ctx.fill()
         }
+        ctx.restore()
+
+        ctx.save()
+        ctx.globalAlpha = successPop
+        ctx.fillStyle = '#ffffff'
+        ctx.shadowColor = boostColor
+        ctx.shadowBlur = 20
+        ctx.font = '1000 30px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('♪', burstX, burstY + 10 - burstOut * 18)
+        ctx.restore()
+
+        // Boost streaks tie the note hit back to the hero car.
+        ctx.save()
+        ctx.globalAlpha = successPop * 0.78
+        ctx.strokeStyle = boostColor
+        ctx.lineWidth = 9
+        ctx.lineCap = 'round'
+        ctx.shadowColor = boostColor
+        ctx.shadowBlur = 18
+        ctx.beginPath()
+        ctx.moveTo(w * carX - 22, h * 0.84)
+        ctx.lineTo(w * carX - 30, h * 0.92 + burstOut * 20)
+        ctx.moveTo(w * carX + 22, h * 0.84)
+        ctx.lineTo(w * carX + 30, h * 0.92 + burstOut * 20)
+        ctx.stroke()
         ctx.restore()
       }
 
@@ -1026,8 +1070,9 @@ function GameCanvas(props) {
       const actionProgress = Math.min(1, Math.max(0, actionAge / 560))
       const jumpHeight = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
       const spinTilt = actionRef.current === 'spin' && actionAge < 560 ? actionProgress * Math.PI * 2 : 0
+      const arcadeLean = Math.max(-0.16, Math.min(0.16, carLean))
 
-      drawCar(w * carX, h * 0.80, carScale, t, Math.max(pop, successPop), spinTilt + carLean, jumpHeight)
+      drawCar(w * carX, h * 0.80, carScale, t, Math.max(pop, successPop), spinTilt + arcadeLean, jumpHeight)
 
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
@@ -1449,11 +1494,11 @@ export default function App() {
     if (won) return
     setWrong(false)
     playTone(index, false)
-    if (haptics) {
-      try { navigator.vibrate?.(14) } catch {}
-    }
 
     if (index !== target) {
+      if (haptics) {
+        try { navigator.vibrate?.(9) } catch {}
+      }
       setWrong(true)
       window.setTimeout(() => setWrong(false), 220)
       return
@@ -1465,6 +1510,9 @@ export default function App() {
     setSuccessPulse(now)
     setLastHit(index)
     playSpark(index)
+    if (haptics) {
+      try { navigator.vibrate?.([12, 22]) } catch {}
+    }
     setCheer(step % 3 === 0 ? 'NICE!' : step % 3 === 1 ? 'YEAH!' : 'GO!')
     window.setTimeout(() => setCheer(''), 330)
 
