@@ -47,11 +47,87 @@ const WORLD_NAMES = {
 }
 
 let audioContext
+let worldMusicTimer
+let worldMusicWorld
+let worldMusicBeat = 0
+
+function ensureAudio() {
+  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)()
+  if (audioContext.state === 'suspended') audioContext.resume()
+  return audioContext
+}
+
+function playWorldPulse(world, beat) {
+  try {
+    const context = ensureAudio()
+    const bases = { city: 130.81, forest: 110, mountain: 146.83, space: 98 }
+    const shapes = { city: 'triangle', forest: 'sine', mountain: 'triangle', space: 'sine' }
+    const steps = [1, 1.5, 2, 1.5]
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    const filter = context.createBiquadFilter()
+    const now = context.currentTime
+    const base = bases[world] || bases.city
+
+    oscillator.type = shapes[world] || 'sine'
+    oscillator.frequency.value = base * steps[beat % steps.length]
+    filter.type = 'lowpass'
+    filter.frequency.value = world === 'space' ? 850 : 1200
+    gain.gain.setValueAtTime(0.018, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23)
+
+    oscillator.connect(filter).connect(gain).connect(context.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.24)
+
+    if (beat % 4 === 0) {
+      const accent = context.createOscillator()
+      const accentGain = context.createGain()
+      accent.type = 'sine'
+      accent.frequency.value = base / 2
+      accentGain.gain.setValueAtTime(0.02, now)
+      accentGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16)
+      accent.connect(accentGain).connect(context.destination)
+      accent.start(now)
+      accent.stop(now + 0.17)
+    }
+  } catch {}
+}
+
+function startWorldMusic(world) {
+  try {
+    ensureAudio()
+    if (worldMusicTimer && worldMusicWorld === world) return
+    if (worldMusicTimer) window.clearInterval(worldMusicTimer)
+
+    worldMusicWorld = world
+    worldMusicBeat = 0
+    playWorldPulse(world, worldMusicBeat++)
+    worldMusicTimer = window.setInterval(() => playWorldPulse(world, worldMusicBeat++), 520)
+  } catch {}
+}
+
+function stopWorldMusic() {
+  if (worldMusicTimer) window.clearInterval(worldMusicTimer)
+  worldMusicTimer = undefined
+  worldMusicWorld = undefined
+}
+
+function playWorldStinger(world) {
+  const sequences = {
+    city: [0, 1, 2],
+    forest: [2, 1, 0],
+    mountain: [0, 2, 3],
+    space: [3, 2, 3],
+  }
+  ;(sequences[world] || sequences.city).forEach((note, i) => {
+    window.setTimeout(() => playTone(note, false), i * 100)
+  })
+}
 
 function playTone(index, soft) {
   try {
-    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)()
-    if (audioContext.state === 'suspended') audioContext.resume()
+    ensureAudio()
 
     const oscillator = audioContext.createOscillator()
     const gain = audioContext.createGain()
@@ -106,6 +182,7 @@ function GameCanvas(props) {
   const carRef = useRef(props.car)
   const worldRef = useRef(props.world)
   const successRef = useRef(props.successPulse)
+  const lastHitRef = useRef(props.lastHit)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -117,6 +194,7 @@ function GameCanvas(props) {
   useEffect(() => { carRef.current = props.car }, [props.car])
   useEffect(() => { worldRef.current = props.world }, [props.world])
   useEffect(() => { successRef.current = props.successPulse }, [props.successPulse])
+  useEffect(() => { lastHitRef.current = props.lastHit }, [props.lastHit])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -725,11 +803,28 @@ function GameCanvas(props) {
       const carScale = Math.min(w / 430, 1.1) * (1 + successPop * 0.06)
 
       if (successPop > 0) {
+        const boostColor = COLORS[lastHitRef.current] || '#fff27a'
+
+        ctx.save()
+        ctx.globalAlpha = successPop * 0.72
+        ctx.strokeStyle = boostColor
+        ctx.lineWidth = 9
+        ctx.lineCap = 'round'
+        ctx.shadowColor = boostColor
+        ctx.shadowBlur = 18
+        ctx.beginPath()
+        ctx.moveTo(w * carX - 20, h * 0.85)
+        ctx.lineTo(w * carX - 28, h * 0.91 + (1 - successPop) * 18)
+        ctx.moveTo(w * carX + 20, h * 0.85)
+        ctx.lineTo(w * carX + 28, h * 0.91 + (1 - successPop) * 18)
+        ctx.stroke()
+        ctx.restore()
+
         ctx.save()
         ctx.globalAlpha = successPop
-        ctx.shadowColor = '#fff27a'
+        ctx.shadowColor = boostColor
         ctx.shadowBlur = 24
-        ctx.fillStyle = '#fff27a'
+        ctx.fillStyle = boostColor
         for (let i = 0; i < 9; i += 1) {
           const angle = (Math.PI * 2 * i) / 9
           const distance = 52 + (1 - successPop) * 34
@@ -834,7 +929,9 @@ export default function App() {
   const [lane, setLane] = useState(1)
   const [pulse, setPulse] = useState(0)
   const [successPulse, setSuccessPulse] = useState(0)
+  const [lastHit, setLastHit] = useState(0)
   const [introId, setIntroId] = useState(1)
+  const [worldSplash, setWorldSplash] = useState('')
   const [cheer, setCheer] = useState('')
   const [won, setWon] = useState(false)
   const [wrong, setWrong] = useState(false)
@@ -859,10 +956,12 @@ export default function App() {
       localStorage.setItem('carkeys-level', '0')
     }
     setLevel(nextLevel)
+    startWorldMusic(LEVELS[nextLevel].world)
     setStep(0)
     setLane(1)
     setPulse(0)
     setSuccessPulse(0)
+    setWorldSplash('')
     setCheer('')
     setIntroId((value) => value + 1)
     setWon(false)
@@ -877,11 +976,22 @@ export default function App() {
 
   function nextLevel() {
     if (isLastLevel) {
+      stopWorldMusic()
       setScreen('home')
       return
     }
 
     const next = level + 1
+    const nextWorld = LEVELS[next].world
+    const changingWorld = nextWorld !== currentLevel.world
+
+    if (changingWorld) {
+      setWorldSplash(WORLD_NAMES[nextWorld])
+      playWorldStinger(nextWorld)
+      window.setTimeout(() => setWorldSplash(''), 1250)
+      startWorldMusic(nextWorld)
+    }
+
     setLevel(next)
     setSavedLevel(next)
     localStorage.setItem('carkeys-level', String(next))
@@ -889,6 +999,7 @@ export default function App() {
     setLane(1)
     setPulse(performance.now())
     setSuccessPulse(0)
+    setWorldSplash('')
     setCheer('')
     setIntroId((value) => value + 1)
     setWon(false)
@@ -900,10 +1011,17 @@ export default function App() {
     setLane(1)
     setPulse(performance.now())
     setSuccessPulse(0)
+    setWorldSplash('')
     setCheer('')
     setIntroId((value) => value + 1)
     setWon(false)
     setWrong(false)
+  }
+
+  function goHome() {
+    stopWorldMusic()
+    setWorldSplash('')
+    setScreen('home')
   }
 
   function press(index) {
@@ -922,6 +1040,7 @@ export default function App() {
 
     const now = performance.now()
     setSuccessPulse(now)
+    setLastHit(index)
     playSpark(index)
     setCheer(step % 3 === 0 ? 'NICE!' : step % 3 === 1 ? 'YEAH!' : 'GO!')
     window.setTimeout(() => setCheer(''), 330)
@@ -969,15 +1088,23 @@ export default function App() {
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
+        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
         <div className={'level-badge '+currentLevel.world}>{WORLD_NAMES[currentLevel.world]} · LEVEL {level + 1} · {currentLevel.name}</div>
-        <div key={introId} className={'level-intro '+currentLevel.world}>
-          <small>{WORLD_NAMES[currentLevel.world]}</small>
-          <b>{currentLevel.name}</b>
-          <span>GO!</span>
-        </div>
+        {worldSplash ? (
+          <div className={'world-splash '+currentLevel.world}>
+            <small>NEW WORLD</small>
+            <b>{worldSplash}</b>
+            <span>{currentLevel.name}</span>
+          </div>
+        ) : (
+          <div key={introId} className={'level-intro '+currentLevel.world}>
+            <small>{WORLD_NAMES[currentLevel.world]}</small>
+            <b>{currentLevel.name}</b>
+            <span>GO!</span>
+          </div>
+        )}
         {cheer && <div key={successPulse} className="hit-pop">{cheer}</div>}
-        <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
+        <button className="home-button" onClick={goHome}>⌂</button>
         {!won && (
           <div className={wrong ? 'prompt wrong' : 'prompt'}>
             {wrong ? 'TRY AGAIN' : <span>TAP <b>{NOTES[target]}</b></span>}
@@ -997,7 +1124,7 @@ export default function App() {
             {isLastLevel && <div className="unlock-car purple-reward">★ GALAXY GLIDE ★</div>}
             <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
             <button className="secondary" onClick={replayLevel}>AGAIN</button>
-            {!isLastLevel && <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>}
+            {!isLastLevel && <button className="tertiary" onClick={goHome}>HOME</button>}
           </div>
         )}
       </div>
