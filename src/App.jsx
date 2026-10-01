@@ -1109,6 +1109,10 @@ export default function App() {
   const [goldUnlocked, setGoldUnlocked] = useState(() => localStorage.getItem('carkeys-gold') === '1')
   const [purpleUnlocked, setPurpleUnlocked] = useState(() => localStorage.getItem('carkeys-purple') === '1')
   const [car, setCar] = useState(() => localStorage.getItem('carkeys-car') || 'blue')
+  const [volume, setVolume] = useState(() => Number(localStorage.getItem('carkeys-volume') ?? '1'))
+  const [haptics, setHaptics] = useState(() => localStorage.getItem('carkeys-haptics') !== '0')
+  const [parentOpen, setParentOpen] = useState(false)
+  const [replayWorld, setReplayWorld] = useState(null)
   const [level, setLevel] = useState(initialSavedLevel)
   const [step, setStep] = useState(0)
   const [lane, setLane] = useState(1)
@@ -1125,6 +1129,22 @@ export default function App() {
   const pattern = currentLevel.pattern
   const target = pattern[Math.min(step, pattern.length - 1)]
   const isLastLevel = level === LEVELS.length - 1
+  const unlockedWorlds = {
+    city: true,
+    forest: pinkUnlocked,
+    mountain: greenUnlocked,
+    space: goldUnlocked,
+  }
+  const freeWorld = goldUnlocked ? 'space' : greenUnlocked ? 'mountain' : pinkUnlocked ? 'forest' : 'city'
+
+  useEffect(() => {
+    masterVolume = volume
+    localStorage.setItem('carkeys-volume', String(volume))
+  }, [volume])
+
+  useEffect(() => {
+    localStorage.setItem('carkeys-haptics', haptics ? '1' : '0')
+  }, [haptics])
 
   useEffect(() => {
     if (screen !== 'play' || won) return undefined
@@ -1134,6 +1154,7 @@ export default function App() {
 
   function start() {
     const nextLevel = adventureComplete ? 0 : savedLevel
+    setReplayWorld(null)
     if (adventureComplete) {
       setAdventureComplete(false)
       setSavedLevel(0)
@@ -1154,6 +1175,23 @@ export default function App() {
     setScreen('play')
   }
 
+  function startWorld(world) {
+    const startLevel = WORLD_META[world].start
+    setReplayWorld(world)
+    setLevel(startLevel)
+    startWorldMusic(world)
+    setStep(0)
+    setLane(1)
+    setPulse(0)
+    setSuccessPulse(0)
+    setWorldSplash('')
+    setCheer('')
+    setIntroId((value) => value + 1)
+    setWon(false)
+    setWrong(false)
+    setScreen('play')
+  }
+
   function chooseCar(id) {
     setCar(id)
     localStorage.setItem('carkeys-car', id)
@@ -1162,12 +1200,21 @@ export default function App() {
   function nextLevel() {
     if (isLastLevel) {
       stopWorldMusic()
-      setScreen('home')
+      setReplayWorld(null)
+      setScreen('complete')
       return
     }
 
     const next = level + 1
     const nextWorld = LEVELS[next].world
+
+    if (replayWorld && nextWorld !== replayWorld) {
+      stopWorldMusic()
+      setReplayWorld(null)
+      setScreen('worlds')
+      return
+    }
+
     const changingWorld = nextWorld !== currentLevel.world
 
     if (changingWorld) {
@@ -1178,8 +1225,9 @@ export default function App() {
     }
 
     setLevel(next)
-    setSavedLevel(next)
-    localStorage.setItem('carkeys-level', String(next))
+    const bestLevel = Math.max(savedLevel, next)
+    setSavedLevel(bestLevel)
+    localStorage.setItem('carkeys-level', String(bestLevel))
     setStep(0)
     setLane(1)
     setPulse(performance.now())
@@ -1205,7 +1253,38 @@ export default function App() {
 
   function goHome() {
     stopWorldMusic()
+    setReplayWorld(null)
     setWorldSplash('')
+    setScreen('home')
+  }
+
+  function resetProgress() {
+    stopWorldMusic()
+    ;[
+      'carkeys-level',
+      'carkeys-complete',
+      'carkeys-all-complete',
+      'carkeys-mountain-complete',
+      'carkeys-space-complete',
+      'carkeys-pink',
+      'carkeys-green',
+      'carkeys-gold',
+      'carkeys-purple',
+      'carkeys-car',
+    ].forEach((key) => localStorage.removeItem(key))
+
+    setSavedLevel(0)
+    setAdventureComplete(false)
+    setPinkUnlocked(false)
+    setGreenUnlocked(false)
+    setGoldUnlocked(false)
+    setPurpleUnlocked(false)
+    setCar('blue')
+    setLevel(0)
+    setStep(0)
+    setWon(false)
+    setReplayWorld(null)
+    setParentOpen(false)
     setScreen('home')
   }
 
@@ -1215,7 +1294,9 @@ export default function App() {
     setPulse(performance.now())
     setWrong(false)
     playTone(index, false)
-    try { navigator.vibrate?.(14) } catch {}
+    if (haptics) {
+      try { navigator.vibrate?.(14) } catch {}
+    }
 
     if (index !== target) {
       setWrong(true)
@@ -1262,13 +1343,55 @@ export default function App() {
         localStorage.setItem('carkeys-space-complete', '1')
       } else {
         const upcoming = level + 1
-        setSavedLevel(upcoming)
-        localStorage.setItem('carkeys-level', String(upcoming))
+        const bestLevel = Math.max(savedLevel, upcoming)
+        setSavedLevel(bestLevel)
+        localStorage.setItem('carkeys-level', String(bestLevel))
       }
     }
   }
 
-  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} greenUnlocked={greenUnlocked} goldUnlocked={goldUnlocked} purpleUnlocked={purpleUnlocked} car={car} onCar={chooseCar} />
+  if (screen === 'home') {
+    return (
+      <>
+        <Home
+          onPlay={start}
+          onFreeDrive={() => setScreen('free')}
+          onWorlds={() => setScreen('worlds')}
+          onParents={() => setParentOpen(true)}
+          hasContinue={!adventureComplete && savedLevel > 0}
+          savedLevel={savedLevel}
+          pinkUnlocked={pinkUnlocked}
+          greenUnlocked={greenUnlocked}
+          goldUnlocked={goldUnlocked}
+          purpleUnlocked={purpleUnlocked}
+          car={car}
+          onCar={chooseCar}
+        />
+        {parentOpen && (
+          <ParentControls
+            volume={volume}
+            haptics={haptics}
+            onVolume={setVolume}
+            onHaptics={setHaptics}
+            onReset={resetProgress}
+            onClose={() => setParentOpen(false)}
+          />
+        )}
+      </>
+    )
+  }
+
+  if (screen === 'worlds') {
+    return <WorldSelect unlocked={unlockedWorlds} onWorld={startWorld} onBack={goHome} />
+  }
+
+  if (screen === 'free') {
+    return <FreeDrive car={car} world={freeWorld} haptics={haptics} onBack={goHome} />
+  }
+
+  if (screen === 'complete') {
+    return <AdventureComplete onFreeDrive={() => setScreen('free')} onWorlds={() => setScreen('worlds')} onReplay={start} />
+  }
 
   return (
     <section className="play-screen">
