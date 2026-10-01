@@ -424,6 +424,12 @@ export default function App() {
 
   function start() {
     const nextLevel = adventureComplete ? 0 : savedLevel
+    if (adventureComplete) {
+      setAdventureComplete(false)
+      setSavedLevel(0)
+      localStorage.setItem('carkeys-complete', '0')
+      localStorage.setItem('carkeys-level', '0')
+    }
     setLevel(nextLevel)
     setStep(0)
     setLane(1)
