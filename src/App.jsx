@@ -19,12 +19,18 @@ const LEVELS = [
   { name: 'DRUM TREES', pattern: [2, 2, 0, 2], scene: 'drums', world: 'forest' },
   { name: 'OWL GLOW', pattern: [0, 2, 1, 3], scene: 'owl', world: 'forest' },
   { name: 'MOON PARADE', pattern: [0, 1, 2, 3, 2, 1], scene: 'parade', world: 'forest' },
+  { name: 'ROCK STEPS', pattern: [0, 0, 1, 2], scene: 'rocks', world: 'mountain' },
+  { name: 'WATERFALL NOTES', pattern: [0, 1, 2, 3], scene: 'waterfall', world: 'mountain' },
+  { name: 'CRYSTAL CAVE', pattern: [1, 2, 1, 3], scene: 'crystals', world: 'mountain' },
+  { name: 'MOUNTAIN LIGHTS', pattern: [0, 2, 3, 2, 1], scene: 'beacons', world: 'mountain' },
+  { name: 'SUMMIT SONG', pattern: [0, 1, 2, 3, 0, 3], scene: 'summit', world: 'mountain' },
 ]
 
 const CARS = {
   blue: { name: 'Blue Buddy', body: '#1d9cf0', roof: '#5fc8ff' },
   pink: { name: 'Pink Pop', body: '#f04f91', roof: '#ff91bd' },
   green: { name: 'Forest Flash', body: '#36bf64', roof: '#7bea93' },
+  gold: { name: 'Summit Spark', body: '#f0a52b', roof: '#ffd96b' },
 }
 
 let audioContext
@@ -158,9 +164,10 @@ function GameCanvas(props) {
       ctx.clearRect(0, 0, w, h)
 
       const forest = worldRef.current === 'forest'
+      const mountain = worldRef.current === 'mountain'
       const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62)
-      sky.addColorStop(0, forest ? '#496fd7' : '#48c9ff')
-      sky.addColorStop(1, forest ? '#9ed5e8' : '#c6f3ff')
+      sky.addColorStop(0, mountain ? '#7ab9f0' : forest ? '#496fd7' : '#48c9ff')
+      sky.addColorStop(1, mountain ? '#e5f5ff' : forest ? '#9ed5e8' : '#c6f3ff')
       ctx.fillStyle = sky
       ctx.fillRect(0, 0, w, h)
 
@@ -175,10 +182,34 @@ function GameCanvas(props) {
         ctx.fill()
       })
 
-      ctx.fillStyle = forest ? '#347f48' : '#67cf56'
+      ctx.fillStyle = mountain ? '#78926f' : forest ? '#347f48' : '#67cf56'
       ctx.fillRect(0, h * 0.55, w, h * 0.45)
 
-      if (forest) {
+      if (mountain) {
+        const peaks = [
+          {x:w*.16,y:h*.56,wide:w*.28,tall:h*.25,color:'#8ca7b7'},
+          {x:w*.44,y:h*.56,wide:w*.34,tall:h*.33,color:'#6f8b9d'},
+          {x:w*.76,y:h*.56,wide:w*.30,tall:h*.27,color:'#91adbc'},
+        ]
+        peaks.forEach((p,i) => {
+          ctx.beginPath()
+          ctx.moveTo(p.x-p.wide/2,p.y)
+          ctx.lineTo(p.x,p.y-p.tall)
+          ctx.lineTo(p.x+p.wide/2,p.y)
+          ctx.closePath()
+          ctx.fillStyle=p.color
+          ctx.fill()
+
+          ctx.beginPath()
+          ctx.moveTo(p.x,p.y-p.tall)
+          ctx.lineTo(p.x-p.wide*.10,p.y-p.tall*.72)
+          ctx.lineTo(p.x+p.wide*.08,p.y-p.tall*.78)
+          ctx.lineTo(p.x+p.wide*.16,p.y-p.tall*.56)
+          ctx.closePath()
+          ctx.fillStyle='#f4fbff'
+          ctx.fill()
+        })
+      } else if (forest) {
         for (let i = 0; i < 9; i += 1) {
           const x = (i + 0.5) * (w / 9)
           const treeH = h * (0.18 + (i % 3) * 0.035)
@@ -395,6 +426,102 @@ function GameCanvas(props) {
         }
       }
 
+      if (scene === 'rocks') {
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.17 + i * 0.20)
+          const y = h * (0.50 - (i % 2) * 0.035)
+          ctx.beginPath()
+          ctx.moveTo(x-17,y+10)
+          ctx.lineTo(x-8,y-12)
+          ctx.lineTo(x+14,y-8)
+          ctx.lineTo(x+19,y+11)
+          ctx.closePath()
+          ctx.fillStyle = i < completed ? '#ffd05b' : '#768694'
+          ctx.fill()
+          ctx.lineWidth=3
+          ctx.strokeStyle='#fff'
+          ctx.stroke()
+        }
+      }
+
+      if (scene === 'waterfall') {
+        const flow = Math.min(1, completed / Math.max(1, patternRef.current.length))
+        const x = w * 0.50
+        const y = h * 0.33
+        roundedRect(x-42,y,84,h*.22,24,'#7e95a3','#fff',3)
+        ctx.save()
+        ctx.globalAlpha = 0.25 + flow * 0.75
+        ctx.fillStyle='#6ed8ff'
+        roundedRect(x-26,y+10,52,h*.20,22,'#6ed8ff',null,0)
+        ctx.restore()
+        for(let i=0;i<completed;i+=1){
+          ctx.beginPath()
+          ctx.arc(x-22+i*15,y+h*.21,8,0,Math.PI*2)
+          ctx.fillStyle=COLORS[i%COLORS.length]
+          ctx.fill()
+        }
+      }
+
+      if (scene === 'crystals') {
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.18 + i * 0.20)
+          const y = h * 0.48
+          ctx.save()
+          if(i<completed){ctx.shadowColor=COLORS[i%COLORS.length];ctx.shadowBlur=24}
+          ctx.beginPath()
+          ctx.moveTo(x,y-28)
+          ctx.lineTo(x+15,y)
+          ctx.lineTo(x,y+22)
+          ctx.lineTo(x-15,y)
+          ctx.closePath()
+          ctx.fillStyle = i < completed ? COLORS[i%COLORS.length] : '#8291a5'
+          ctx.fill()
+          ctx.lineWidth=3
+          ctx.strokeStyle='#fff'
+          ctx.stroke()
+          ctx.restore()
+        }
+      }
+
+      if (scene === 'beacons') {
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.12 + i * 0.19)
+          const y = h * (0.47 - (i%2)*0.05)
+          roundedRect(x-4,y,8,45,4,'#5f6f7d','#fff',2)
+          ctx.beginPath()
+          ctx.arc(x,y-5,11,0,Math.PI*2)
+          ctx.fillStyle=i<completed?'#ffe15d':'#71808c'
+          ctx.fill()
+          if(i<completed){
+            ctx.save()
+            ctx.shadowColor='#ffe15d';ctx.shadowBlur=22
+            ctx.beginPath();ctx.arc(x,y-5,8,0,Math.PI*2);ctx.fillStyle='#fff7a4';ctx.fill()
+            ctx.restore()
+          }
+        }
+      }
+
+      if (scene === 'summit') {
+        const summitY = h * 0.42
+        ctx.fillStyle='#ffffff'
+        roundedRect(w*.31,summitY-30,w*.38,34,10,'#ffffff','#f0a52b',4)
+        ctx.fillStyle='#a96c0d'
+        ctx.font='1000 17px Arial'
+        ctx.textAlign='center'
+        ctx.fillText('SUMMIT',w*.5,summitY-8)
+
+        for(let i=0;i<Math.min(completed,patternRef.current.length);i+=1){
+          const x=w*(0.14+i*.14)
+          const y=h*(0.32-(i%2)*.05)
+          ctx.save()
+          ctx.shadowColor=COLORS[i%COLORS.length];ctx.shadowBlur=18
+          ctx.fillStyle=COLORS[i%COLORS.length]
+          ctx.font='1000 28px Arial';ctx.textAlign='center'
+          ctx.fillText(i%2?'★':'♪',x,y)
+          ctx.restore()
+        }
+      }
+
       if (scene === 'finish') {
         const bannerY = h * 0.55
         ctx.fillStyle = '#ffffff'
@@ -506,6 +633,7 @@ function Home(props) {
             <button className={props.car === 'blue' ? 'selected blue' : 'blue'} onClick={() => props.onCar('blue')}>●</button>
             <button className={props.car === 'pink' ? 'selected pink' : 'pink'} onClick={() => props.onCar('pink')}>●</button>
             {props.greenUnlocked && <button className={props.car === 'green' ? 'selected green' : 'green'} onClick={() => props.onCar('green')}>●</button>}
+            {props.goldUnlocked && <button className={props.car === 'gold' ? 'selected gold' : 'gold'} onClick={() => props.onCar('gold')}>●</button>}
           </div>
         </div>
       )}
@@ -518,16 +646,19 @@ export default function App() {
   const initialSavedLevel = () => {
     const stored = Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0'))
     const finishedOldCity = localStorage.getItem('carkeys-complete') === '1'
-    const finishedAll = localStorage.getItem('carkeys-all-complete') === '1'
-    if (finishedAll) return 0
+    const finishedForest = localStorage.getItem('carkeys-all-complete') === '1'
+    const finishedMountain = localStorage.getItem('carkeys-mountain-complete') === '1'
+    if (finishedMountain) return 0
+    if (finishedForest && stored <= 14) return 15
     if (finishedOldCity && stored <= 9) return 10
     return stored
   }
 
   const [savedLevel, setSavedLevel] = useState(initialSavedLevel)
-  const [adventureComplete, setAdventureComplete] = useState(() => localStorage.getItem('carkeys-all-complete') === '1')
+  const [adventureComplete, setAdventureComplete] = useState(() => localStorage.getItem('carkeys-mountain-complete') === '1')
   const [pinkUnlocked, setPinkUnlocked] = useState(() => localStorage.getItem('carkeys-pink') === '1')
   const [greenUnlocked, setGreenUnlocked] = useState(() => localStorage.getItem('carkeys-green') === '1')
+  const [goldUnlocked, setGoldUnlocked] = useState(() => localStorage.getItem('carkeys-gold') === '1')
   const [car, setCar] = useState(() => localStorage.getItem('carkeys-car') || 'blue')
   const [level, setLevel] = useState(initialSavedLevel)
   const [step, setStep] = useState(0)
@@ -552,7 +683,7 @@ export default function App() {
     if (adventureComplete) {
       setAdventureComplete(false)
       setSavedLevel(0)
-      localStorage.setItem('carkeys-all-complete', '0')
+      localStorage.setItem('carkeys-mountain-complete', '0')
       localStorage.setItem('carkeys-level', '0')
     }
     setLevel(nextLevel)
@@ -621,11 +752,17 @@ export default function App() {
         localStorage.setItem('carkeys-complete', '1')
       }
 
-      if (isLastLevel) {
+      if (level === 14) {
         setGreenUnlocked(true)
-        setAdventureComplete(true)
         localStorage.setItem('carkeys-green', '1')
         localStorage.setItem('carkeys-all-complete', '1')
+      }
+
+      if (isLastLevel) {
+        setGoldUnlocked(true)
+        setAdventureComplete(true)
+        localStorage.setItem('carkeys-gold', '1')
+        localStorage.setItem('carkeys-mountain-complete', '1')
       } else {
         const upcoming = level + 1
         setSavedLevel(upcoming)
@@ -634,13 +771,13 @@ export default function App() {
     }
   }
 
-  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} greenUnlocked={greenUnlocked} car={car} onCar={chooseCar} />
+  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} greenUnlocked={greenUnlocked} goldUnlocked={goldUnlocked} car={car} onCar={chooseCar} />
 
   return (
     <section className="play-screen">
       <div className="stage-wrap">
         <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
-        <div className={currentLevel.world === 'forest' ? 'level-badge forest' : 'level-badge'}>{currentLevel.world === 'forest' ? 'RHYTHM FOREST' : 'CITY'} · LEVEL {level + 1} · {currentLevel.name}</div>
+        <div className={'level-badge '+currentLevel.world}>{currentLevel.world === 'forest' ? 'RHYTHM FOREST' : currentLevel.world === 'mountain' ? 'MELODY MOUNTAIN' : 'CITY'} · LEVEL {level + 1} · {currentLevel.name}</div>
         <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
         {!won && (
           <div className={wrong ? 'prompt wrong' : 'prompt'}>
@@ -651,10 +788,11 @@ export default function App() {
           <div className="win-card">
             <div className="big-star">★</div>
             <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
-            <h2>{level === 9 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
+            <h2>{level === 9 || level === 14 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
             {level === 9 && <div className="unlock-car">★ PINK POP ★</div>}
-            {isLastLevel && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
-            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : level === 9 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
+            {level === 14 && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
+            {isLastLevel && <div className="unlock-car gold-reward">★ SUMMIT SPARK ★</div>}
+            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : level === 9 || level === 14 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
             <button className="secondary" onClick={replayLevel}>AGAIN</button>
             {!isLastLevel && <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>}
           </div>
