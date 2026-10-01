@@ -18,6 +18,41 @@ function introducedKeyCount(level) {
   return BASE_BUTTON_COUNT
 }
 
+function carUpgradeTier(level) {
+  if (level >= 20) return 4
+  if (level >= 15) return 3
+  if (level >= 10) return 2
+  if (level >= 5) return 1
+  return 0
+}
+
+function missionCopy(scene, patternLength) {
+  const copies = {
+    drive: 'FOLLOW THE MUSIC',
+    lights: 'LIGHT ' + patternLength + ' STREET LAMPS',
+    bridge: 'OPEN THE BRIDGE',
+    tunnel: 'POWER THE TUNNEL',
+    music: 'BUILD THE CITY SONG',
+    rabbit: 'HELP THE BUNNY BOUNCE',
+    fireflies: 'CATCH THE FIREFLIES',
+    drums: 'WAKE THE DRUM TREES',
+    owl: 'LIGHT THE OWL EYES',
+    parade: 'START THE MOON PARADE',
+    rocks: 'CLIMB THE ROCK STEPS',
+    waterfall: 'START THE WATERFALL',
+    crystals: 'LIGHT THE CRYSTALS',
+    beacons: 'POWER THE BEACONS',
+    summit: 'REACH THE SUMMIT',
+    launch: 'CHARGE THE ROCKET',
+    stars: 'HOP ACROSS THE STARS',
+    rings: 'LIGHT THE PLANET RINGS',
+    comets: 'CHASE THE COMETS',
+    moonconcert: 'PLAY THE MOON CONCERT',
+    finish: 'RACE TO THE FINISH',
+  }
+  return copies[scene] || 'FOLLOW THE MUSIC'
+}
+
 function laneX(index, count = BASE_BUTTON_COUNT, horizon = false) {
   if (count === 4) {
     const near = [0.24, 0.41, 0.59, 0.76]
@@ -223,6 +258,7 @@ function GameCanvas(props) {
   const actionRef = useRef(props.freeAction)
   const actionPulseRef = useRef(props.actionPulse)
   const speedRef = useRef(props.speed || 1)
+  const upgradeRef = useRef(props.upgradeTier || 0)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -238,6 +274,7 @@ function GameCanvas(props) {
   useEffect(() => { actionRef.current = props.freeAction }, [props.freeAction])
   useEffect(() => { actionPulseRef.current = props.actionPulse }, [props.actionPulse])
   useEffect(() => { speedRef.current = props.speed || 1 }, [props.speed])
+  useEffect(() => { upgradeRef.current = props.upgradeTier || 0 }, [props.upgradeTier])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -398,6 +435,50 @@ function GameCanvas(props) {
       // Front bumper / grille.
       roundedRect(-31, 25, 62, 9, 5, '#17324f', null, 0)
       roundedRect(-19, 27, 38, 4, 2, '#8bb7c9', null, 0)
+
+      const upgrade = upgradeRef.current
+      if (upgrade >= 1) {
+        // Sport spoiler peeking over the cabin.
+        roundedRect(-39, -51, 78, 7, 4, car.roof, '#ffffff', 2)
+        roundedRect(-34, -48, 6, 12, 3, '#17324f', null, 0)
+        roundedRect(28, -48, 6, 12, 3, '#17324f', null, 0)
+      }
+      if (upgrade >= 2) {
+        // Bright performance rims.
+        ;[-40, 40].forEach((wheelX) => {
+          ctx.save()
+          ctx.shadowColor = '#9ff4ff'
+          ctx.shadowBlur = 10
+          ctx.strokeStyle = '#dffcff'
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          ctx.arc(wheelX, 23, 10, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.restore()
+        })
+      }
+      if (upgrade >= 3) {
+        // Neon underglow.
+        ctx.save()
+        ctx.globalAlpha = 0.65
+        ctx.shadowColor = car.roof
+        ctx.shadowBlur = 18
+        roundedRect(-42, 34, 84, 5, 3, car.roof, null, 0)
+        ctx.restore()
+      }
+      if (upgrade >= 4) {
+        // Final-tier animated music emblem.
+        ctx.save()
+        ctx.translate(0, 4)
+        ctx.rotate(Math.sin(t * 0.004) * 0.08)
+        ctx.fillStyle = '#fff6a8'
+        ctx.shadowColor = '#fff06a'
+        ctx.shadowBlur = 12
+        ctx.font = '1000 15px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('♪', 0, 0)
+        ctx.restore()
+      }
 
       ctx.restore()
     }
@@ -955,25 +1036,68 @@ function GameCanvas(props) {
         const targetLane = farX + (nearX - farX) * eased
         const targetY = h * (0.51 + 0.17 * eased)
         const targetScale = 0.64 + eased * 0.36
+        const targetColor = COLORS[targetRef.current]
+        const targetScene = sceneRef.current
 
         ctx.save()
         ctx.translate(w * targetLane, targetY)
         ctx.scale(targetScale, targetScale)
-        ctx.shadowColor = COLORS[targetRef.current]
-        ctx.shadowBlur = 26
-        ctx.beginPath()
-        ctx.arc(0, 0, 30, 0, Math.PI * 2)
-        ctx.fillStyle = COLORS[targetRef.current]
-        ctx.fill()
+        ctx.shadowColor = targetColor
+        ctx.shadowBlur = 24
         ctx.lineWidth = 5
         ctx.strokeStyle = '#fff'
-        ctx.stroke()
+        ctx.fillStyle = targetColor
+
+        if (targetScene === 'fireflies') {
+          ;[[-10,2],[5,-8],[12,8]].forEach(([fx,fy]) => {
+            ctx.beginPath();ctx.arc(fx,fy,9,0,Math.PI*2);ctx.fill();ctx.stroke()
+          })
+        } else if (targetScene === 'crystals') {
+          ctx.beginPath()
+          ctx.moveTo(0,-34);ctx.lineTo(24,0);ctx.lineTo(0,34);ctx.lineTo(-24,0);ctx.closePath()
+          ctx.fill();ctx.stroke()
+        } else if (targetScene === 'stars' || targetScene === 'moonconcert') {
+          ctx.font = '1000 58px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('★',0,4)
+        } else if (targetScene === 'comets') {
+          ctx.lineWidth = 8
+          ctx.beginPath();ctx.moveTo(-38,-20);ctx.lineTo(-10,-5);ctx.strokeStyle=targetColor;ctx.stroke()
+          ctx.beginPath();ctx.arc(7,4,22,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.stroke()
+        } else if (targetScene === 'drums') {
+          roundedRect(-28,-18,56,38,12,targetColor,'#fff',5)
+          ctx.beginPath();ctx.ellipse(0,-18,28,9,0,0,Math.PI*2);ctx.fillStyle='#fff4b8';ctx.fill()
+        } else if (targetScene === 'launch') {
+          ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.fill();ctx.stroke()
+          ctx.beginPath();ctx.moveTo(-8,30);ctx.lineTo(0,48);ctx.lineTo(8,30);ctx.closePath();ctx.fillStyle='#ffd45d';ctx.fill()
+        } else if (targetScene === 'tunnel' || targetScene === 'rings') {
+          ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.strokeStyle=targetColor;ctx.lineWidth=13;ctx.stroke()
+          ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.stroke()
+        } else if (targetScene === 'lights' || targetScene === 'beacons') {
+          ctx.beginPath();ctx.arc(0,-5,25,0,Math.PI*2);ctx.fill();ctx.stroke()
+          roundedRect(-7,19,14,22,5,'#38516f','#fff',3)
+        } else if (targetScene === 'bridge') {
+          roundedRect(-31,-22,62,44,10,targetColor,'#fff',5)
+          ctx.fillStyle='#fff'
+          ctx.font='1000 24px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↟',0,2)
+        } else {
+          ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.fill();ctx.stroke()
+        }
+
         ctx.shadowBlur = 0
         ctx.fillStyle = '#fff'
-        ctx.font = '1000 28px Arial'
+        ctx.font = '1000 22px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText(NOTES[targetRef.current], 0, 2)
+        if (!['stars','moonconcert','drums','tunnel','rings','lights','beacons','bridge'].includes(targetScene)) {
+          ctx.fillText(NOTES[targetRef.current], 0, 2)
+        } else {
+          ctx.save()
+          ctx.shadowColor='#17324f';ctx.shadowBlur=4
+          ctx.fillText(NOTES[targetRef.current], 0, targetScene === 'lights' || targetScene === 'beacons' ? -5 : 2)
+          ctx.restore()
+        }
         ctx.restore()
       }
 
@@ -1227,6 +1351,7 @@ function FreeDrive({ car, world, haptics, onBack }) {
           freeAction={action}
           actionPulse={actionPulse}
           speed={1.15}
+          upgradeTier={world === 'space' ? 4 : world === 'mountain' ? 3 : world === 'forest' ? 2 : 1}
         />
         <div className={'level-badge '+world}>FREE DRIVE · {WORLD_NAMES[world]}</div>
         <button className="home-button" onClick={onBack}>⌂</button>
@@ -1600,7 +1725,7 @@ export default function App() {
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} speed={levelSpeed(level)} />
+        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} speed={levelSpeed(level)} upgradeTier={carUpgradeTier(level)} />
         <div className={'game-hud '+currentLevel.world}>
           <div className="hud-copy">
             <b>LEVEL {level + 1}</b>
@@ -1626,6 +1751,7 @@ export default function App() {
         )}
         {cheer && <div key={successPulse} className="hit-pop">{cheer}</div>}
         <button className="home-button" onClick={goHome}>⌂</button>
+        {!won && <div className={'mission-pill '+currentLevel.world}>{missionCopy(currentLevel.scene, pattern.length)}</div>}
         {wrong && <div className="prompt wrong">TRY AGAIN</div>}
         {won && (
           <div className="win-card compact-win">
@@ -1639,10 +1765,10 @@ export default function App() {
                 <h2>{level === 9 || level === 14 || level === 19 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
               </div>
             </div>
-            {level === 9 && <div className="unlock-car">★ PINK POP ★</div>}
-            {level === 14 && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
-            {level === 19 && <div className="unlock-car gold-reward">★ SUMMIT SPARK ★</div>}
-            {isLastLevel && <div className="unlock-car purple-reward">★ GALAXY GLIDE ★</div>}
+            {level === 9 && <div className="unlock-car">★ PINK POP + SPORT SPOILER ★</div>}
+            {level === 14 && <div className="unlock-car green-reward">★ FOREST FLASH + NEON RIMS ★</div>}
+            {level === 19 && <div className="unlock-car gold-reward">★ SUMMIT SPARK + UNDERGLOW ★</div>}
+            {isLastLevel && <div className="unlock-car purple-reward">★ GALAXY GLIDE + MUSIC EMBLEM ★</div>}
             <button className="next-drive" onClick={nextLevel}>{isLastLevel ? 'CELEBRATE ▶' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
             <div className="win-small-actions">
               <button className="secondary" onClick={replayLevel}>AGAIN</button>
