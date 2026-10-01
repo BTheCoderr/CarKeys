@@ -269,3 +269,20 @@ button{font:inherit;border:0;touch-action:manipulation}
   box-shadow:0 5px 0 #208a4d;
   text-shadow:0 2px 0 #1e7846
 }
+
+
+/* v0.5 — Melody Mountain expansion */
+.level-badge.mountain{
+  background:linear-gradient(#f0b650,#c88422);
+  box-shadow:0 4px 0 #8d5d19;
+  text-shadow:0 2px 0 #7a4f16
+}
+.car-picker button.gold{
+  color:#f0a52b;
+  background:#fff1c7
+}
+.gold-reward{
+  background:linear-gradient(#ffd96b,#eda12b);
+  box-shadow:0 5px 0 #aa6e16;
+  text-shadow:0 2px 0 #8f5d14
+}
