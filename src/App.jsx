@@ -46,6 +46,13 @@ const WORLD_NAMES = {
   space: 'SPACE BEAT',
 }
 
+const WORLD_META = {
+  city: { icon: '♪', start: 0, end: 9 },
+  forest: { icon: '♣', start: 10, end: 14 },
+  mountain: { icon: '▲', start: 15, end: 19 },
+  space: { icon: '★', start: 20, end: 24 },
+}
+
 let audioContext
 let masterVolume = 1
 let worldMusicTimer
@@ -881,10 +888,27 @@ function GameCanvas(props) {
 
 function Home(props) {
   const car = CARS[props.car] || CARS.blue
+  const holdRef = useRef(null)
+
+  function holdStart() {
+    window.clearTimeout(holdRef.current)
+    holdRef.current = window.setTimeout(props.onParents, 900)
+  }
+
+  function holdEnd() {
+    window.clearTimeout(holdRef.current)
+  }
+
   return (
     <section className="home-screen">
       <div className="home-scene">
-        <div className="logo"><span>♪</span>CarKeys</div>
+        <div
+          className="logo"
+          onPointerDown={holdStart}
+          onPointerUp={holdEnd}
+          onPointerCancel={holdEnd}
+          onPointerLeave={holdEnd}
+        ><span>♪</span>CarKeys</div>
         <div className="home-copy">Tap the keys. Drive the car.</div>
         <div className="home-road" />
         <div className="home-car">
@@ -897,10 +921,19 @@ function Home(props) {
           </div>
         </div>
       </div>
+
       <button className="play-button" onClick={props.onPlay}>
         <span>▶</span>
         <div><b>{props.hasContinue ? 'CONTINUE' : 'PLAY'}</b>{props.hasContinue && <small>Level {props.savedLevel + 1}</small>}</div>
       </button>
+
+      {props.pinkUnlocked && (
+        <div className="home-actions">
+          <button onClick={props.onFreeDrive}><b>∞</b><span>FREE DRIVE</span></button>
+          <button onClick={props.onWorlds}><b>◎</b><span>WORLDS</span></button>
+        </div>
+      )}
+
       {props.pinkUnlocked && (
         <div className="car-picker">
           <span>YOUR CAR</span>
@@ -914,6 +947,143 @@ function Home(props) {
         </div>
       )}
     </section>
+  )
+}
+
+function WorldSelect({ unlocked, onWorld, onBack }) {
+  const worlds = ['city', 'forest', 'mountain', 'space']
+
+  return (
+    <section className="menu-screen world-screen">
+      <button className="menu-back" onClick={onBack}>‹</button>
+      <div className="menu-title"><small>CHOOSE A WORLD</small><h1>Where to?</h1></div>
+      <div className="world-grid">
+        {worlds.map((world) => {
+          const open = unlocked[world]
+          const meta = WORLD_META[world]
+          return (
+            <button
+              key={world}
+              className={'world-card '+world+(open ? '' : ' locked')}
+              onClick={() => open && onWorld(world)}
+              disabled={!open}
+            >
+              <span className="world-icon">{open ? meta.icon : '●'}</span>
+              <b>{WORLD_NAMES[world]}</b>
+              <small>{open ? 'PLAY' : 'LOCKED'}</small>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function FreeDrive({ car, world, haptics, onBack }) {
+  const [lane, setLane] = useState(1)
+  const [pulse, setPulse] = useState(0)
+  const [successPulse, setSuccessPulse] = useState(0)
+  const [lastHit, setLastHit] = useState(0)
+  const [action, setAction] = useState('')
+  const [actionPulse, setActionPulse] = useState(0)
+  const actions = ['JUMP', 'SWERVE', 'TURBO', 'SPIN']
+
+  useEffect(() => {
+    startWorldMusic(world)
+    return () => stopWorldMusic()
+  }, [world])
+
+  function tap(index) {
+    const now = performance.now()
+    playTone(index, false)
+    playSpark(index)
+    setLastHit(index)
+    setPulse(now)
+    setSuccessPulse(now)
+    setActionPulse(now)
+    setAction(['jump', 'swerve', 'turbo', 'spin'][index])
+
+    if (index === 1) setLane((value) => (value + 1) % 4)
+    if (haptics) {
+      try { navigator.vibrate?.(index === 2 ? 26 : 14) } catch {}
+    }
+  }
+
+  return (
+    <section className="play-screen free-drive-screen">
+      <div className="stage-wrap">
+        <GameCanvas
+          lane={lane}
+          pulse={pulse}
+          successPulse={successPulse}
+          lastHit={lastHit}
+          progress={0}
+          target={0}
+          won
+          pattern={[]}
+          scene="drive"
+          world={world}
+          car={car}
+          freeAction={action}
+          actionPulse={actionPulse}
+        />
+        <div className={'level-badge '+world}>FREE DRIVE · {WORLD_NAMES[world]}</div>
+        <button className="home-button" onClick={onBack}>⌂</button>
+        <div className="free-hint">PLAY WITH THE CAR!</div>
+      </div>
+      <div className="controller free-controller">
+        {NOTES.map((note, index) => (
+          <button
+            key={note}
+            onPointerDown={() => tap(index)}
+            style={{ '--key-color': COLORS[index] }}
+          >
+            <b>{note}</b>
+            <small>{actions[index]}</small>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function AdventureComplete({ onFreeDrive, onWorlds, onReplay }) {
+  return (
+    <section className="complete-screen">
+      <div className="complete-stars" aria-hidden="true">★ ♪ ★ ♪ ★</div>
+      <div className="complete-card">
+        <small>CARKEYS</small>
+        <h1>YOU FINISHED<br/>THE ADVENTURE!</h1>
+        <p>City. Forest. Mountain. Space.</p>
+        <div className="complete-cars">
+          {Object.entries(CARS).map(([id, car]) => (
+            <span key={id} style={{ '--car': car.body }} title={car.name}>●</span>
+          ))}
+        </div>
+        <button className="complete-primary" onClick={onFreeDrive}>∞ FREE DRIVE</button>
+        <button onClick={onWorlds}>◎ CHOOSE A WORLD</button>
+        <button className="complete-quiet" onClick={onReplay}>↻ PLAY AGAIN</button>
+      </div>
+    </section>
+  )
+}
+
+function ParentControls({ volume, haptics, onVolume, onHaptics, onReset, onClose }) {
+  return (
+    <div className="parent-overlay">
+      <div className="parent-card">
+        <div className="parent-head"><b>PARENT CONTROLS</b><button onClick={onClose}>×</button></div>
+        <label>
+          <span>SOUND</span>
+          <input type="range" min="0" max="1" step="0.25" value={volume} onChange={(e) => onVolume(Number(e.target.value))} />
+        </label>
+        <button className="parent-toggle" onClick={() => onHaptics(!haptics)}>
+          <span>HAPTICS</span><b>{haptics ? 'ON' : 'OFF'}</b>
+        </button>
+        <button className="reset-progress" onClick={onReset}>RESET PROGRESS</button>
+        <small>Hold the CarKeys logo to open this menu.</small>
+      </div>
+    </div>
   )
 }
 
