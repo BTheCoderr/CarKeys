@@ -39,6 +39,13 @@ const CARS = {
   purple: { name: 'Galaxy Glide', body: '#7a4ee8', roof: '#b893ff' },
 }
 
+const WORLD_NAMES = {
+  city: 'MUSIC CITY',
+  forest: 'RHYTHM FOREST',
+  mountain: 'MELODY MOUNTAIN',
+  space: 'SPACE BEAT',
+}
+
 let audioContext
 
 function playTone(index, soft) {
@@ -65,6 +72,22 @@ function playTone(index, soft) {
   } catch {}
 }
 
+function playSpark(index) {
+  try {
+    if (!audioContext) return
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    const now = audioContext.currentTime
+    oscillator.type = 'sine'
+    oscillator.frequency.value = FREQUENCIES[index] * 2
+    gain.gain.setValueAtTime(0.045, now + 0.035)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18)
+    oscillator.connect(gain).connect(audioContext.destination)
+    oscillator.start(now + 0.035)
+    oscillator.stop(now + 0.19)
+  } catch {}
+}
+
 function playWin() {
   ;[0, 1, 2, 3, 2, 3].forEach((note, index) => {
     window.setTimeout(() => playTone(note, false), index * 115)
@@ -82,6 +105,7 @@ function GameCanvas(props) {
   const sceneRef = useRef(props.scene)
   const carRef = useRef(props.car)
   const worldRef = useRef(props.world)
+  const successRef = useRef(props.successPulse)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -92,6 +116,7 @@ function GameCanvas(props) {
   useEffect(() => { sceneRef.current = props.scene }, [props.scene])
   useEffect(() => { carRef.current = props.car }, [props.car])
   useEffect(() => { worldRef.current = props.world }, [props.world])
+  useEffect(() => { successRef.current = props.successPulse }, [props.successPulse])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -144,10 +169,12 @@ function GameCanvas(props) {
       ctx.arc(13, -22, 4, 0, Math.PI * 2)
       ctx.fill()
 
+      const happyAge = performance.now() - successRef.current
+      const happy = happyAge < 420
       ctx.strokeStyle = '#0f3761'
-      ctx.lineWidth = 3
+      ctx.lineWidth = happy ? 4 : 3
       ctx.beginPath()
-      ctx.arc(0, -5, 12, 0.2, Math.PI - 0.2)
+      ctx.arc(0, happy ? -2 : -5, happy ? 17 : 12, 0.2, Math.PI - 0.2)
       ctx.stroke()
 
       ctx.fillStyle = '#ffef72'
@@ -657,7 +684,9 @@ function GameCanvas(props) {
       ctx.strokeStyle = '#ffffff'
       ctx.lineWidth = 5
       ctx.setLineDash([28, 32])
-      ctx.lineDashOffset = (t * 0.16) % 80
+      const successAge = performance.now() - successRef.current
+      const roadSpeed = successAge < 430 ? 0.42 : 0.16
+      ctx.lineDashOffset = (t * roadSpeed) % 80
       ctx.beginPath()
       ctx.moveTo(w * 0.5, horizonY)
       ctx.lineTo(w * 0.5, h)
@@ -691,7 +720,29 @@ function GameCanvas(props) {
       carX += (desiredX - carX) * 0.12
       const pulseAge = performance.now() - pulseRef.current
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
-      drawCar(w * carX, h * 0.82, Math.min(w / 430, 1.1), t, pop)
+      const successAge = performance.now() - successRef.current
+      const successPop = successAge < 420 ? Math.max(0, 1 - successAge / 420) : 0
+      const carScale = Math.min(w / 430, 1.1) * (1 + successPop * 0.06)
+
+      if (successPop > 0) {
+        ctx.save()
+        ctx.globalAlpha = successPop
+        ctx.shadowColor = '#fff27a'
+        ctx.shadowBlur = 24
+        ctx.fillStyle = '#fff27a'
+        for (let i = 0; i < 9; i += 1) {
+          const angle = (Math.PI * 2 * i) / 9
+          const distance = 52 + (1 - successPop) * 34
+          const sx = w * carX + Math.cos(angle) * distance
+          const sy = h * 0.82 + Math.sin(angle) * distance * 0.55
+          ctx.beginPath()
+          ctx.arc(sx, sy, 3 + (i % 3), 0, Math.PI * 2)
+          ctx.fill()
+        }
+        ctx.restore()
+      }
+
+      drawCar(w * carX, h * 0.82, carScale, t, Math.max(pop, successPop))
 
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
@@ -782,6 +833,9 @@ export default function App() {
   const [step, setStep] = useState(0)
   const [lane, setLane] = useState(1)
   const [pulse, setPulse] = useState(0)
+  const [successPulse, setSuccessPulse] = useState(0)
+  const [introId, setIntroId] = useState(1)
+  const [cheer, setCheer] = useState('')
   const [won, setWon] = useState(false)
   const [wrong, setWrong] = useState(false)
 
@@ -808,6 +862,9 @@ export default function App() {
     setStep(0)
     setLane(1)
     setPulse(0)
+    setSuccessPulse(0)
+    setCheer('')
+    setIntroId((value) => value + 1)
     setWon(false)
     setWrong(false)
     setScreen('play')
@@ -831,6 +888,9 @@ export default function App() {
     setStep(0)
     setLane(1)
     setPulse(performance.now())
+    setSuccessPulse(0)
+    setCheer('')
+    setIntroId((value) => value + 1)
     setWon(false)
     setWrong(false)
   }
@@ -839,6 +899,9 @@ export default function App() {
     setStep(0)
     setLane(1)
     setPulse(performance.now())
+    setSuccessPulse(0)
+    setCheer('')
+    setIntroId((value) => value + 1)
     setWon(false)
     setWrong(false)
   }
@@ -856,6 +919,12 @@ export default function App() {
       window.setTimeout(() => setWrong(false), 220)
       return
     }
+
+    const now = performance.now()
+    setSuccessPulse(now)
+    playSpark(index)
+    setCheer(step % 3 === 0 ? 'NICE!' : step % 3 === 1 ? 'YEAH!' : 'GO!')
+    window.setTimeout(() => setCheer(''), 330)
 
     const next = step + 1
     setStep(next)
@@ -900,8 +969,14 @@ export default function App() {
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
-        <div className={'level-badge '+currentLevel.world}>{currentLevel.world === 'forest' ? 'RHYTHM FOREST' : currentLevel.world === 'mountain' ? 'MELODY MOUNTAIN' : currentLevel.world === 'space' ? 'SPACE BEAT' : 'CITY'} · LEVEL {level + 1} · {currentLevel.name}</div>
+        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
+        <div className={'level-badge '+currentLevel.world}>{WORLD_NAMES[currentLevel.world]} · LEVEL {level + 1} · {currentLevel.name}</div>
+        <div key={introId} className={'level-intro '+currentLevel.world}>
+          <small>{WORLD_NAMES[currentLevel.world]}</small>
+          <b>{currentLevel.name}</b>
+          <span>GO!</span>
+        </div>
+        {cheer && <div key={successPulse} className="hit-pop">{cheer}</div>}
         <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
         {!won && (
           <div className={wrong ? 'prompt wrong' : 'prompt'}>
@@ -910,6 +985,9 @@ export default function App() {
         )}
         {won && (
           <div className="win-card">
+            <div className="win-confetti" aria-hidden="true">
+              {Array.from({length: 14}, (_, i) => <i key={i} style={{ '--i': i }} />)}
+            </div>
             <div className="big-star">★</div>
             <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
             <h2>{level === 9 || level === 14 || level === 19 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
