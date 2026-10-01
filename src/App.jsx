@@ -6,8 +6,16 @@ const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
 const BASE_BUTTON_COUNT = 4
 
 function levelSpeed(level) {
-  // Keep the first world relaxed, then raise the road pace gently every five levels.
-  return Math.min(1.5, 1 + Math.floor(level / 5) * 0.10)
+  // Very gentle ramp: early levels feel calm, later levels feel quicker without becoming twitchy.
+  return Math.min(1.30, 0.88 + level * 0.017)
+}
+
+function introducedKeyCount(level) {
+  // Teach one new key at a time, then keep all four available for the rest of the adventure.
+  if (level <= 0) return 1
+  if (level === 1) return 2
+  if (level === 2) return 3
+  return BASE_BUTTON_COUNT
 }
 
 function laneX(index, count = BASE_BUTTON_COUNT, horizon = false) {
@@ -1276,6 +1284,7 @@ export default function App() {
   const currentLevel = LEVELS[level]
   const pattern = currentLevel.pattern
   const target = pattern[Math.min(step, pattern.length - 1)]
+  const activeKeyCount = introducedKeyCount(level)
   const isLastLevel = level === LEVELS.length - 1
   const unlockedWorlds = {
     city: true,
@@ -1552,6 +1561,7 @@ export default function App() {
           <div className="hud-progress">
             <i style={{ width: Math.max(10, (step / pattern.length) * 100) + '%' }} />
           </div>
+          {level < 4 && <div className="learning-cue">{activeKeyCount === 1 ? 'LEARN C' : activeKeyCount === 2 ? 'ADD D' : activeKeyCount === 3 ? 'ADD E' : 'ADD F'}</div>}
         </div>
         {worldSplash ? (
           <div className={'world-splash '+currentLevel.world}>
@@ -1595,16 +1605,21 @@ export default function App() {
       </div>
 
       <div className="controller">
-        {NOTES.map((note, index) => (
-          <button
-            key={note}
-            onPointerDown={() => press(index)}
-            className={index === target && !won ? 'hint' : ''}
-            style={{ '--key-color': COLORS[index] }}
-          >
-            {note}
-          </button>
-        ))}
+        {NOTES.map((note, index) => {
+          const sleeping = index >= activeKeyCount
+          return (
+            <button
+              key={note}
+              onPointerDown={() => !sleeping && press(index)}
+              className={(index === target && !won ? 'hint ' : '') + (sleeping ? 'sleeping' : '')}
+              style={{ '--key-color': COLORS[index] }}
+              disabled={sleeping}
+              aria-label={sleeping ? note + ' unlocks soon' : note}
+            >
+              {note}
+            </button>
+          )
+        })}
       </div>
     </section>
   )
