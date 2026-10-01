@@ -684,8 +684,8 @@ function GameCanvas(props) {
       ctx.strokeStyle = '#ffffff'
       ctx.lineWidth = 5
       ctx.setLineDash([28, 32])
-      const successAge = performance.now() - successRef.current
-      const roadSpeed = successAge < 430 ? 0.42 : 0.16
+      const roadBoostAge = performance.now() - successRef.current
+      const roadSpeed = roadBoostAge < 430 ? 0.42 : 0.16
       ctx.lineDashOffset = (t * roadSpeed) % 80
       ctx.beginPath()
       ctx.moveTo(w * 0.5, horizonY)
