@@ -3,7 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 const NOTES = ['C', 'D', 'E', 'F']
 const COLORS = ['#ff4f88', '#ffd43d', '#55d84a', '#9b4cf0']
 const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
-const ROUND = [0, 0, 1, 2, 1, 3, 2, 0, 3, 1]
+const LEVELS = [
+  { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0] },
+  { name: 'TWO KEYS', pattern: [0, 1, 0, 1] },
+  { name: 'THREE KEYS', pattern: [0, 1, 2, 1] },
+  { name: 'FOUR KEYS', pattern: [0, 1, 2, 3] },
+  { name: 'MIX IT UP', pattern: [0, 2, 1, 3, 0, 1] },
+]
 
 let audioContext
 
@@ -44,12 +50,14 @@ function GameCanvas(props) {
   const targetRef = useRef(props.target)
   const wonRef = useRef(props.won)
   const pulseRef = useRef(props.pulse)
+  const patternRef = useRef(props.pattern)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
   useEffect(() => { targetRef.current = props.target }, [props.target])
   useEffect(() => { wonRef.current = props.won }, [props.won])
   useEffect(() => { pulseRef.current = props.pulse }, [props.pulse])
+  useEffect(() => { patternRef.current = props.pattern }, [props.pattern])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -213,8 +221,9 @@ function GameCanvas(props) {
       drawCar(w * carX, h * 0.82, Math.min(w / 430, 1.1), t, pop)
 
       const completed = progressRef.current
-      for (let i = 0; i < ROUND.length; i += 1) {
-        const px = w * 0.5 + (i - (ROUND.length - 1) / 2) * 20
+      const pattern = patternRef.current
+      for (let i = 0; i < pattern.length; i += 1) {
+        const px = w * 0.5 + (i - (pattern.length - 1) / 2) * 20
         ctx.beginPath()
         ctx.arc(px, 24, 6, 0, Math.PI * 2)
         ctx.fillStyle = i < completed ? '#ffd43d' : 'rgba(255,255,255,.7)'
@@ -261,13 +270,17 @@ function Home(props) {
 
 export default function App() {
   const [screen, setScreen] = useState('home')
+  const [level, setLevel] = useState(0)
   const [step, setStep] = useState(0)
   const [lane, setLane] = useState(1)
   const [pulse, setPulse] = useState(0)
   const [won, setWon] = useState(false)
   const [wrong, setWrong] = useState(false)
 
-  const target = ROUND[Math.min(step, ROUND.length - 1)]
+  const currentLevel = LEVELS[level]
+  const pattern = currentLevel.pattern
+  const target = pattern[Math.min(step, pattern.length - 1)]
+  const isLastLevel = level === LEVELS.length - 1
 
   useEffect(() => {
     if (screen !== 'play' || won) return undefined
@@ -276,12 +289,35 @@ export default function App() {
   }, [screen, target, won])
 
   function start() {
+    setLevel(0)
     setStep(0)
     setLane(1)
     setPulse(0)
     setWon(false)
     setWrong(false)
     setScreen('play')
+  }
+
+  function nextLevel() {
+    if (isLastLevel) {
+      start()
+      return
+    }
+
+    setLevel((value) => value + 1)
+    setStep(0)
+    setLane(1)
+    setPulse(performance.now())
+    setWon(false)
+    setWrong(false)
+  }
+
+  function replayLevel() {
+    setStep(0)
+    setLane(1)
+    setPulse(performance.now())
+    setWon(false)
+    setWrong(false)
   }
 
   function press(index) {
@@ -301,7 +337,7 @@ export default function App() {
     const next = step + 1
     setStep(next)
 
-    if (next >= ROUND.length) {
+    if (next >= pattern.length) {
       setWon(true)
       window.setTimeout(playWin, 120)
     }
@@ -312,7 +348,8 @@ export default function App() {
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} />
+        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} />
+        <div className="level-badge">LEVEL {level + 1} · {currentLevel.name}</div>
         <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
         {!won && (
           <div className={wrong ? 'prompt wrong' : 'prompt'}>
@@ -322,9 +359,11 @@ export default function App() {
         {won && (
           <div className="win-card">
             <div className="big-star">★</div>
-            <h2>NICE DRIVE!</h2>
-            <button onClick={start}>AGAIN</button>
-            <button className="secondary" onClick={() => setScreen('home')}>HOME</button>
+            <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
+            <h2>{isLastLevel ? 'YOU DID IT!' : 'NICE DRIVE!'}</h2>
+            <button onClick={nextLevel}>{isLastLevel ? 'PLAY AGAIN' : 'NEXT ▶'}</button>
+            <button className="secondary" onClick={replayLevel}>AGAIN</button>
+            <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>
           </div>
         )}
       </div>
