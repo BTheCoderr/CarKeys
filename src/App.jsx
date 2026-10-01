@@ -4,21 +4,27 @@ const NOTES = ['C', 'D', 'E', 'F']
 const COLORS = ['#ff4f88', '#ffd43d', '#55d84a', '#9b4cf0']
 const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
 const LEVELS = [
-  { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0], scene: 'drive' },
-  { name: 'TWO KEYS', pattern: [0, 1, 0, 1], scene: 'drive' },
-  { name: 'THREE KEYS', pattern: [0, 1, 2, 1], scene: 'drive' },
-  { name: 'FOUR KEYS', pattern: [0, 1, 2, 3], scene: 'drive' },
-  { name: 'MIX IT UP', pattern: [0, 2, 1, 3, 0, 1], scene: 'drive' },
-  { name: 'LIGHT THE STREET', pattern: [0, 0, 1, 1], scene: 'lights' },
-  { name: 'OPEN THE BRIDGE', pattern: [0, 1, 0, 1], scene: 'bridge' },
-  { name: 'GLOW TUNNEL', pattern: [0, 1, 2, 3], scene: 'tunnel' },
-  { name: 'MUSIC CITY', pattern: [0, 2, 1, 3, 2], scene: 'music' },
-  { name: 'FINISH LINE', pattern: [0, 1, 2, 3, 1, 3], scene: 'finish' },
+  { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0], scene: 'drive', world: 'city' },
+  { name: 'TWO KEYS', pattern: [0, 1, 0, 1], scene: 'drive', world: 'city' },
+  { name: 'THREE KEYS', pattern: [0, 1, 2, 1], scene: 'drive', world: 'city' },
+  { name: 'FOUR KEYS', pattern: [0, 1, 2, 3], scene: 'drive', world: 'city' },
+  { name: 'MIX IT UP', pattern: [0, 2, 1, 3, 0, 1], scene: 'drive', world: 'city' },
+  { name: 'LIGHT THE STREET', pattern: [0, 0, 1, 1], scene: 'lights', world: 'city' },
+  { name: 'OPEN THE BRIDGE', pattern: [0, 1, 0, 1], scene: 'bridge', world: 'city' },
+  { name: 'GLOW TUNNEL', pattern: [0, 1, 2, 3], scene: 'tunnel', world: 'city' },
+  { name: 'MUSIC CITY', pattern: [0, 2, 1, 3, 2], scene: 'music', world: 'city' },
+  { name: 'FINISH LINE', pattern: [0, 1, 2, 3, 1, 3], scene: 'finish', world: 'city' },
+  { name: 'BUNNY BOUNCE', pattern: [0, 0, 1, 1], scene: 'rabbit', world: 'forest' },
+  { name: 'FIREFLY TRAIL', pattern: [0, 1, 2, 1], scene: 'fireflies', world: 'forest' },
+  { name: 'DRUM TREES', pattern: [2, 2, 0, 2], scene: 'drums', world: 'forest' },
+  { name: 'OWL GLOW', pattern: [0, 2, 1, 3], scene: 'owl', world: 'forest' },
+  { name: 'MOON PARADE', pattern: [0, 1, 2, 3, 2, 1], scene: 'parade', world: 'forest' },
 ]
 
 const CARS = {
   blue: { name: 'Blue Buddy', body: '#1d9cf0', roof: '#5fc8ff' },
   pink: { name: 'Pink Pop', body: '#f04f91', roof: '#ff91bd' },
+  green: { name: 'Forest Flash', body: '#36bf64', roof: '#7bea93' },
 }
 
 let audioContext
@@ -63,6 +69,7 @@ function GameCanvas(props) {
   const patternRef = useRef(props.pattern)
   const sceneRef = useRef(props.scene)
   const carRef = useRef(props.car)
+  const worldRef = useRef(props.world)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -72,6 +79,7 @@ function GameCanvas(props) {
   useEffect(() => { patternRef.current = props.pattern }, [props.pattern])
   useEffect(() => { sceneRef.current = props.scene }, [props.scene])
   useEffect(() => { carRef.current = props.car }, [props.car])
+  useEffect(() => { worldRef.current = props.world }, [props.world])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -149,14 +157,15 @@ function GameCanvas(props) {
 
       ctx.clearRect(0, 0, w, h)
 
+      const forest = worldRef.current === 'forest'
       const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62)
-      sky.addColorStop(0, '#48c9ff')
-      sky.addColorStop(1, '#c6f3ff')
+      sky.addColorStop(0, forest ? '#496fd7' : '#48c9ff')
+      sky.addColorStop(1, forest ? '#9ed5e8' : '#c6f3ff')
       ctx.fillStyle = sky
       ctx.fillRect(0, 0, w, h)
 
       const cloudBase = ((t * 0.012) % (w + 220)) - 140
-      ctx.fillStyle = 'rgba(255,255,255,.92)'
+      ctx.fillStyle = forest ? 'rgba(244,252,255,.72)' : 'rgba(255,255,255,.92)'
       ;[0, w * 0.58].forEach((offset) => {
         const x = ((cloudBase + offset + w + 220) % (w + 220)) - 110
         ctx.beginPath()
@@ -166,16 +175,37 @@ function GameCanvas(props) {
         ctx.fill()
       })
 
-      ctx.fillStyle = '#67cf56'
+      ctx.fillStyle = forest ? '#347f48' : '#67cf56'
       ctx.fillRect(0, h * 0.55, w, h * 0.45)
 
-      const buildings = ['#ff6c77', '#5a9cff', '#ffd64f', '#9d5de6', '#ff61a4', '#4ec77d', '#ff9b43']
-      buildings.forEach((color, i) => {
-        const bw = w / buildings.length + 6
-        const bh = h * (0.13 + ((i * 37) % 9) * 0.012)
-        const x = i * (w / buildings.length) - 3
-        roundedRect(x, h * 0.55 - bh, bw, bh + 4, 10, color, null, 0)
-      })
+      if (forest) {
+        for (let i = 0; i < 9; i += 1) {
+          const x = (i + 0.5) * (w / 9)
+          const treeH = h * (0.18 + (i % 3) * 0.035)
+          roundedRect(x - 8, h * 0.55 - treeH * 0.48, 16, treeH * 0.55, 7, '#755033', null, 0)
+          ctx.fillStyle = i % 2 ? '#2da65a' : '#3ebc65'
+          ctx.beginPath()
+          ctx.arc(x, h * 0.55 - treeH * 0.55, 34, 0, Math.PI * 2)
+          ctx.arc(x - 20, h * 0.55 - treeH * 0.42, 24, 0, Math.PI * 2)
+          ctx.arc(x + 20, h * 0.55 - treeH * 0.42, 24, 0, Math.PI * 2)
+          ctx.fill()
+        }
+
+        ctx.save()
+        ctx.fillStyle = '#fff5b8'
+        ctx.beginPath()
+        ctx.arc(w * 0.82, h * 0.13, 32, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      } else {
+        const buildings = ['#ff6c77', '#5a9cff', '#ffd64f', '#9d5de6', '#ff61a4', '#4ec77d', '#ff9b43']
+        buildings.forEach((color, i) => {
+          const bw = w / buildings.length + 6
+          const bh = h * (0.13 + ((i * 37) % 9) * 0.012)
+          const x = i * (w / buildings.length) - 3
+          roundedRect(x, h * 0.55 - bh, bw, bh + 4, 10, color, null, 0)
+        })
+      }
 
       const horizonY = h * 0.52
       ctx.fillStyle = '#7488a5'
@@ -278,6 +308,90 @@ function GameCanvas(props) {
           ctx.textAlign = 'center'
           ctx.fillText(symbols[i], x, y)
           ctx.restore()
+        }
+      }
+
+      if (scene === 'rabbit') {
+        const count = patternRef.current.length
+        for (let i = 0; i < count; i += 1) {
+          const x = w * (0.18 + i * 0.17)
+          const y = h * (0.47 - (i % 2) * 0.035)
+          ctx.beginPath()
+          ctx.arc(x, y, 12, 0, Math.PI * 2)
+          ctx.fillStyle = i < completed ? '#fff5dc' : '#6ca77a'
+          ctx.fill()
+          if (i < completed) {
+            ctx.fillStyle = '#ff8caf'
+            ctx.fillRect(x - 3, y - 18, 6, 12)
+          }
+        }
+      }
+
+      if (scene === 'fireflies') {
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.16 + i * 0.18)
+          const y = h * (0.40 + (i % 2) * 0.08)
+          ctx.save()
+          ctx.shadowColor = '#fff16b'
+          ctx.shadowBlur = i < completed ? 25 : 0
+          ctx.beginPath()
+          ctx.arc(x, y, 8, 0, Math.PI * 2)
+          ctx.fillStyle = i < completed ? '#fff16b' : '#61806a'
+          ctx.fill()
+          ctx.restore()
+        }
+      }
+
+      if (scene === 'drums') {
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.16 + i * 0.20)
+          const y = h * 0.50
+          roundedRect(x - 19, y - 10, 38, 28, 9, i < completed ? '#e49a48' : '#825f42', '#fff3d0', 3)
+          ctx.beginPath()
+          ctx.ellipse(x, y - 10, 19, 7, 0, 0, Math.PI * 2)
+          ctx.fillStyle = i < completed ? '#ffd379' : '#a98766'
+          ctx.fill()
+        }
+      }
+
+      if (scene === 'owl') {
+        ctx.save()
+        ctx.translate(w * 0.5, h * 0.43)
+        ctx.fillStyle = '#8358a9'
+        ctx.beginPath()
+        ctx.arc(0, 0, 52, 0, Math.PI * 2)
+        ctx.fill()
+        ;[-20, 20].forEach((x, i) => {
+          ctx.beginPath()
+          ctx.arc(x, -5, 16, 0, Math.PI * 2)
+          ctx.fillStyle = completed > i ? '#fff16b' : '#e7e4ef'
+          ctx.fill()
+          ctx.beginPath()
+          ctx.arc(x, -5, 6, 0, Math.PI * 2)
+          ctx.fillStyle = '#22314f'
+          ctx.fill()
+        })
+        ctx.fillStyle = '#ffb949'
+        ctx.beginPath()
+        ctx.moveTo(-7, 12);ctx.lineTo(7, 12);ctx.lineTo(0, 24);ctx.closePath();ctx.fill()
+        ctx.restore()
+      }
+
+      if (scene === 'parade') {
+        const lanterns = Math.min(completed, patternRef.current.length)
+        for (let i = 0; i < patternRef.current.length; i += 1) {
+          const x = w * (0.12 + i * 0.15)
+          const y = h * (0.39 + (i % 2) * 0.06)
+          ctx.beginPath()
+          ctx.arc(x, y, 11, 0, Math.PI * 2)
+          ctx.fillStyle = i < lanterns ? COLORS[i % COLORS.length] : '#718b7a'
+          ctx.fill()
+          if (i < lanterns) {
+            ctx.save()
+            ctx.shadowColor = COLORS[i % COLORS.length]
+            ctx.shadowBlur = 20
+            ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fillStyle='#fff7c8';ctx.fill();ctx.restore()
+          }
         }
       }
 
@@ -391,6 +505,7 @@ function Home(props) {
           <div>
             <button className={props.car === 'blue' ? 'selected blue' : 'blue'} onClick={() => props.onCar('blue')}>●</button>
             <button className={props.car === 'pink' ? 'selected pink' : 'pink'} onClick={() => props.onCar('pink')}>●</button>
+            {props.greenUnlocked && <button className={props.car === 'green' ? 'selected green' : 'green'} onClick={() => props.onCar('green')}>●</button>}
           </div>
         </div>
       )}
@@ -400,11 +515,21 @@ function Home(props) {
 
 export default function App() {
   const [screen, setScreen] = useState('home')
-  const [savedLevel, setSavedLevel] = useState(() => Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0')))
-  const [adventureComplete, setAdventureComplete] = useState(() => localStorage.getItem('carkeys-complete') === '1')
+  const initialSavedLevel = () => {
+    const stored = Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0'))
+    const finishedOldCity = localStorage.getItem('carkeys-complete') === '1'
+    const finishedAll = localStorage.getItem('carkeys-all-complete') === '1'
+    if (finishedAll) return 0
+    if (finishedOldCity && stored <= 9) return 10
+    return stored
+  }
+
+  const [savedLevel, setSavedLevel] = useState(initialSavedLevel)
+  const [adventureComplete, setAdventureComplete] = useState(() => localStorage.getItem('carkeys-all-complete') === '1')
   const [pinkUnlocked, setPinkUnlocked] = useState(() => localStorage.getItem('carkeys-pink') === '1')
+  const [greenUnlocked, setGreenUnlocked] = useState(() => localStorage.getItem('carkeys-green') === '1')
   const [car, setCar] = useState(() => localStorage.getItem('carkeys-car') || 'blue')
-  const [level, setLevel] = useState(() => Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0')))
+  const [level, setLevel] = useState(initialSavedLevel)
   const [step, setStep] = useState(0)
   const [lane, setLane] = useState(1)
   const [pulse, setPulse] = useState(0)
@@ -427,7 +552,7 @@ export default function App() {
     if (adventureComplete) {
       setAdventureComplete(false)
       setSavedLevel(0)
-      localStorage.setItem('carkeys-complete', '0')
+      localStorage.setItem('carkeys-all-complete', '0')
       localStorage.setItem('carkeys-level', '0')
     }
     setLevel(nextLevel)
@@ -490,11 +615,17 @@ export default function App() {
       setWon(true)
       window.setTimeout(playWin, 120)
 
-      if (isLastLevel) {
+      if (level === 9) {
         setPinkUnlocked(true)
-        setAdventureComplete(true)
         localStorage.setItem('carkeys-pink', '1')
         localStorage.setItem('carkeys-complete', '1')
+      }
+
+      if (isLastLevel) {
+        setGreenUnlocked(true)
+        setAdventureComplete(true)
+        localStorage.setItem('carkeys-green', '1')
+        localStorage.setItem('carkeys-all-complete', '1')
       } else {
         const upcoming = level + 1
         setSavedLevel(upcoming)
@@ -503,13 +634,13 @@ export default function App() {
     }
   }
 
-  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} car={car} onCar={chooseCar} />
+  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} greenUnlocked={greenUnlocked} car={car} onCar={chooseCar} />
 
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} car={car} />
-        <div className="level-badge">LEVEL {level + 1} · {currentLevel.name}</div>
+        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
+        <div className={currentLevel.world === 'forest' ? 'level-badge forest' : 'level-badge'}>{currentLevel.world === 'forest' ? 'RHYTHM FOREST' : 'CITY'} · LEVEL {level + 1} · {currentLevel.name}</div>
         <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
         {!won && (
           <div className={wrong ? 'prompt wrong' : 'prompt'}>
@@ -520,9 +651,10 @@ export default function App() {
           <div className="win-card">
             <div className="big-star">★</div>
             <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
-            <h2>{isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
-            {isLastLevel && <div className="unlock-car">★ PINK POP ★</div>}
-            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : 'NEXT ▶'}</button>
+            <h2>{level === 9 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
+            {level === 9 && <div className="unlock-car">★ PINK POP ★</div>}
+            {isLastLevel && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
+            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : level === 9 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
             <button className="secondary" onClick={replayLevel}>AGAIN</button>
             {!isLastLevel && <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>}
           </div>
