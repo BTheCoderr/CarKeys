@@ -303,3 +303,145 @@ button{font:inherit;border:0;touch-action:manipulation}
   box-shadow:0 5px 0 #4e2bb2;
   text-shadow:0 2px 0 #432598
 }
+
+
+/* v0.7 — game-feel polish */
+.level-intro{
+  position:absolute;
+  z-index:24;
+  left:50%;
+  top:48%;
+  width:min(76%,340px);
+  transform:translate(-50%,-50%);
+  padding:14px 18px;
+  border:5px solid #fff;
+  border-radius:26px;
+  background:linear-gradient(#4dbbff,#1d72d8);
+  color:#fff;
+  text-align:center;
+  box-shadow:0 8px 0 #0f4f9c,0 16px 34px #1d4e7a4a;
+  pointer-events:none;
+  animation:levelIntro 1.05s ease-out forwards
+}
+.level-intro.forest{background:linear-gradient(#59d477,#268c50);box-shadow:0 8px 0 #16663a,0 16px 34px #1f5b3540}
+.level-intro.mountain{background:linear-gradient(#ffc861,#c98728);box-shadow:0 8px 0 #8e5c18,0 16px 34px #74512642}
+.level-intro.space{background:linear-gradient(#9874ff,#5633ba);box-shadow:0 8px 0 #3d258a,0 16px 34px #3d2a704f}
+.level-intro small{
+  display:block;
+  margin-bottom:3px;
+  font-size:10px;
+  font-weight:1000;
+  letter-spacing:.12em
+}
+.level-intro b{
+  display:block;
+  font-size:23px;
+  line-height:1;
+  text-shadow:0 2px 0 #0002
+}
+.level-intro span{
+  display:block;
+  margin-top:7px;
+  font-size:31px;
+  font-weight:1000;
+  color:#fff36b;
+  text-shadow:0 3px 0 #9b7818
+}
+@keyframes levelIntro{
+  0%{opacity:0;transform:translate(-50%,-42%) scale(.76)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}
+  65%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-57%) scale(.94)}
+}
+
+.hit-pop{
+  position:absolute;
+  z-index:23;
+  left:50%;
+  bottom:19%;
+  transform:translateX(-50%);
+  padding:7px 14px;
+  border:4px solid #fff;
+  border-radius:999px;
+  background:linear-gradient(#fff26a,#ffc931);
+  color:#295fa6;
+  font-size:21px;
+  font-weight:1000;
+  box-shadow:0 5px 0 #d18d1e;
+  pointer-events:none;
+  animation:hitPop .34s ease-out forwards
+}
+@keyframes hitPop{
+  0%{opacity:0;transform:translateX(-50%) translateY(12px) scale(.65)}
+  35%{opacity:1;transform:translateX(-50%) translateY(-7px) scale(1.12)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-26px) scale(.92)}
+}
+
+.win-card{
+  animation:winCardIn .42s cubic-bezier(.18,.89,.32,1.28)
+}
+@keyframes winCardIn{
+  0%{opacity:0;transform:translate(-50%,-44%) scale(.72) rotate(-2deg)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+}
+.win-confetti{
+  position:absolute;
+  inset:-28px;
+  overflow:hidden;
+  pointer-events:none;
+  border-radius:42px
+}
+.win-confetti i{
+  --x:calc((var(--i) * 17) % 100);
+  position:absolute;
+  left:calc(var(--x) * 1%);
+  top:-18px;
+  width:9px;
+  height:15px;
+  border-radius:4px;
+  background:hsl(calc(var(--i) * 47deg) 88% 60%);
+  transform:rotate(calc(var(--i) * 23deg));
+  animation:confettiFall 1.7s cubic-bezier(.2,.7,.3,1) infinite;
+  animation-delay:calc(var(--i) * -.08s)
+}
+@keyframes confettiFall{
+  from{transform:translateY(-12px) rotate(0deg)}
+  to{transform:translateY(330px) rotate(520deg)}
+}
+
+.mini-eye{
+  transform-origin:center;
+  animation:carBlink 4.2s infinite
+}
+@keyframes carBlink{
+  0%,45%,49%,100%{transform:scaleY(1)}
+  47%{transform:scaleY(.12)}
+}
+.mini-smile{
+  animation:smileBounce 1.8s ease-in-out infinite alternate
+}
+@keyframes smileBounce{
+  to{transform:translateX(-50%) translateY(2px) scaleX(1.08)}
+}
+
+.prompt.wrong{
+  animation:softWiggle .22s ease-out
+}
+@keyframes softWiggle{
+  25%{transform:translateX(calc(-50% - 4px))}
+  75%{transform:translateX(calc(-50% + 4px))}
+}
+
+.controller button.hint{
+  box-shadow:inset 0 -9px 0 #0002,0 5px 0 #0002,0 0 22px #fff36b99
+}
+.controller button:active{
+  filter:brightness(1.16) saturate(1.08)
+}
+
+@media(max-width:430px){
+  .level-intro{top:44%;width:min(80%,310px)}
+  .level-intro b{font-size:20px}
+  .level-intro span{font-size:27px}
+  .hit-pop{bottom:18%;font-size:18px}
+}
