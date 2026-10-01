@@ -153,3 +153,42 @@ button{font:inherit;border:0;touch-action:manipulation}
   .play-screen{grid-template-rows:minmax(0,1fr) 92px}
   .controller button{height:75px;font-size:36px}
 }
+
+
+/* v0.2 — visible level progression */
+.level-badge{
+  position:absolute;
+  z-index:20;
+  left:12px;
+  top:12px;
+  min-height:38px;
+  padding:8px 12px;
+  border:3px solid #fff;
+  border-radius:999px;
+  background:linear-gradient(#4dbbff,#1c73d8);
+  color:#fff;
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.02em;
+  box-shadow:0 4px 0 #0e4e9c;
+  text-shadow:0 2px 0 #1d5b99
+}
+.level-complete{
+  display:inline-block;
+  margin-bottom:4px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#fff1a9;
+  color:#8b6500;
+  font-size:11px;
+  font-weight:1000
+}
+.win-card .secondary{
+  margin-top:9px
+}
+.win-card .tertiary{
+  margin-top:9px;
+  background:#eef6ff;
+  color:#2b61a9;
+  box-shadow:0 4px 0 #b7d3ed
+}
