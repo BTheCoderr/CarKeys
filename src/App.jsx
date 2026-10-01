@@ -4,12 +4,22 @@ const NOTES = ['C', 'D', 'E', 'F']
 const COLORS = ['#ff4f88', '#ffd43d', '#55d84a', '#9b4cf0']
 const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
 const LEVELS = [
-  { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0] },
-  { name: 'TWO KEYS', pattern: [0, 1, 0, 1] },
-  { name: 'THREE KEYS', pattern: [0, 1, 2, 1] },
-  { name: 'FOUR KEYS', pattern: [0, 1, 2, 3] },
-  { name: 'MIX IT UP', pattern: [0, 2, 1, 3, 0, 1] },
+  { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0], scene: 'drive' },
+  { name: 'TWO KEYS', pattern: [0, 1, 0, 1], scene: 'drive' },
+  { name: 'THREE KEYS', pattern: [0, 1, 2, 1], scene: 'drive' },
+  { name: 'FOUR KEYS', pattern: [0, 1, 2, 3], scene: 'drive' },
+  { name: 'MIX IT UP', pattern: [0, 2, 1, 3, 0, 1], scene: 'drive' },
+  { name: 'LIGHT THE STREET', pattern: [0, 0, 1, 1], scene: 'lights' },
+  { name: 'OPEN THE BRIDGE', pattern: [0, 1, 0, 1], scene: 'bridge' },
+  { name: 'GLOW TUNNEL', pattern: [0, 1, 2, 3], scene: 'tunnel' },
+  { name: 'MUSIC CITY', pattern: [0, 2, 1, 3, 2], scene: 'music' },
+  { name: 'FINISH LINE', pattern: [0, 1, 2, 3, 1, 3], scene: 'finish' },
 ]
+
+const CARS = {
+  blue: { name: 'Blue Buddy', body: '#1d9cf0', roof: '#5fc8ff' },
+  pink: { name: 'Pink Pop', body: '#f04f91', roof: '#ff91bd' },
+}
 
 let audioContext
 
@@ -51,6 +61,8 @@ function GameCanvas(props) {
   const wonRef = useRef(props.won)
   const pulseRef = useRef(props.pulse)
   const patternRef = useRef(props.pattern)
+  const sceneRef = useRef(props.scene)
+  const carRef = useRef(props.car)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -58,6 +70,8 @@ function GameCanvas(props) {
   useEffect(() => { wonRef.current = props.won }, [props.won])
   useEffect(() => { pulseRef.current = props.pulse }, [props.pulse])
   useEffect(() => { patternRef.current = props.pattern }, [props.pattern])
+  useEffect(() => { sceneRef.current = props.scene }, [props.scene])
+  useEffect(() => { carRef.current = props.car }, [props.car])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -98,8 +112,9 @@ function GameCanvas(props) {
       ctx.ellipse(0, 27, 48, 11, 0, 0, Math.PI * 2)
       ctx.fill()
 
-      roundedRect(-50, -24, 100, 54, 23, '#1d9cf0', '#ffffff', 4)
-      roundedRect(-31, -38, 62, 31, 15, '#5fc8ff', '#ffffff', 4)
+      const car = CARS[carRef.current] || CARS.blue
+      roundedRect(-50, -24, 100, 54, 23, car.body, '#ffffff', 4)
+      roundedRect(-31, -38, 62, 31, 15, car.roof, '#ffffff', 4)
       roundedRect(-23, -30, 19, 16, 7, '#dff7ff', null, 0)
       roundedRect(4, -30, 19, 16, 7, '#dff7ff', null, 0)
 
@@ -181,6 +196,109 @@ function GameCanvas(props) {
         ctx.stroke()
       }
 
+      const scene = sceneRef.current
+      const completed = progressRef.current
+
+      if (scene === 'lights') {
+        const lampXs = [w * 0.12, w * 0.30, w * 0.70, w * 0.88]
+        lampXs.forEach((x, i) => {
+          const y = h * (i === 1 || i === 2 ? 0.53 : 0.61)
+          ctx.fillStyle = '#38516f'
+          roundedRect(x - 4, y, 8, 78, 5, '#38516f', '#ffffff', 2)
+          ctx.beginPath()
+          ctx.arc(x, y - 5, 15, 0, Math.PI * 2)
+          ctx.fillStyle = i < completed ? '#ffe052' : '#7f90a4'
+          ctx.fill()
+          ctx.lineWidth = 3
+          ctx.strokeStyle = '#fff'
+          ctx.stroke()
+          if (i < completed) {
+            ctx.save()
+            ctx.shadowColor = '#ffe052'
+            ctx.shadowBlur = 24
+            ctx.beginPath()
+            ctx.arc(x, y - 5, 12, 0, Math.PI * 2)
+            ctx.fillStyle = '#fff18a'
+            ctx.fill()
+            ctx.restore()
+          }
+        })
+      }
+
+      if (scene === 'bridge') {
+        const open = Math.min(1, completed / Math.max(1, patternRef.current.length))
+        ctx.save()
+        ctx.translate(w * 0.5, h * 0.56)
+        ctx.fillStyle = '#f3ddb3'
+        roundedRect(-w * 0.24, -42, 24, 92, 8, '#f3ddb3', '#ffffff', 3)
+        roundedRect(w * 0.24 - 24, -42, 24, 92, 8, '#f3ddb3', '#ffffff', 3)
+        ctx.save()
+        ctx.translate(-w * 0.22, 10)
+        ctx.rotate(-open * 0.55)
+        roundedRect(0, -10, w * 0.22, 20, 7, '#2f75d0', '#ffd43d', 4)
+        ctx.restore()
+        ctx.save()
+        ctx.translate(w * 0.22, 10)
+        ctx.rotate(open * 0.55)
+        roundedRect(-w * 0.22, -10, w * 0.22, 20, 7, '#2f75d0', '#ffd43d', 4)
+        ctx.restore()
+        ctx.restore()
+      }
+
+      if (scene === 'tunnel') {
+        ctx.save()
+        ctx.strokeStyle = '#5b46a5'
+        ctx.lineWidth = 18
+        ctx.beginPath()
+        ctx.arc(w * 0.5, h * 0.57, w * 0.21, Math.PI, 0)
+        ctx.stroke()
+        const ringXs = [0.38, 0.46, 0.54, 0.62]
+        ringXs.forEach((fraction, i) => {
+          ctx.beginPath()
+          ctx.arc(w * fraction, h * 0.55, 11, 0, Math.PI * 2)
+          ctx.fillStyle = i < completed ? COLORS[i] : '#7f82a7'
+          ctx.fill()
+          ctx.lineWidth = 3
+          ctx.strokeStyle = '#fff'
+          ctx.stroke()
+        })
+        ctx.restore()
+      }
+
+      if (scene === 'music') {
+        const symbols = ['♪', '★', '♫', '♪', '★']
+        for (let i = 0; i < Math.min(completed, symbols.length); i += 1) {
+          const x = w * (0.16 + i * 0.17)
+          const y = h * (0.43 - (i % 2) * 0.05)
+          ctx.save()
+          ctx.shadowColor = COLORS[i % COLORS.length]
+          ctx.shadowBlur = 18
+          ctx.fillStyle = COLORS[i % COLORS.length]
+          ctx.font = '1000 34px Arial'
+          ctx.textAlign = 'center'
+          ctx.fillText(symbols[i], x, y)
+          ctx.restore()
+        }
+      }
+
+      if (scene === 'finish') {
+        const bannerY = h * 0.55
+        ctx.fillStyle = '#ffffff'
+        roundedRect(w * 0.25, bannerY - 30, w * 0.50, 36, 10, '#ffffff', '#2467b5', 4)
+        ctx.fillStyle = '#2467b5'
+        ctx.font = '1000 18px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText('FINISH', w * 0.5, bannerY - 6)
+        if (completed > 0) {
+          for (let i = 0; i < completed * 3; i += 1) {
+            const x = (i * 71 + t * 0.04) % w
+            const y = ((i * 43 + t * 0.08) % (h * 0.42)) + 60
+            ctx.fillStyle = COLORS[i % COLORS.length]
+            ctx.fillRect(x, y, 7, 12)
+          }
+        }
+      }
+
       ctx.strokeStyle = '#ffffff'
       ctx.lineWidth = 5
       ctx.setLineDash([28, 32])
@@ -220,7 +338,6 @@ function GameCanvas(props) {
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
       drawCar(w * carX, h * 0.82, Math.min(w / 430, 1.1), t, pop)
 
-      const completed = progressRef.current
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
         const px = w * 0.5 + (i - (pattern.length - 1) / 2) * 20
@@ -247,6 +364,7 @@ function GameCanvas(props) {
 }
 
 function Home(props) {
+  const car = CARS[props.car] || CARS.blue
   return (
     <section className="home-screen">
       <div className="home-scene">
@@ -254,7 +372,7 @@ function Home(props) {
         <div className="home-copy">Tap the keys. Drive the car.</div>
         <div className="home-road" />
         <div className="home-car">
-          <div className="mini-car">
+          <div className="mini-car" style={{ '--car-body': car.body, '--car-roof': car.roof }}>
             <div className="mini-window left" />
             <div className="mini-window right" />
             <div className="mini-eye left" />
@@ -263,14 +381,30 @@ function Home(props) {
           </div>
         </div>
       </div>
-      <button className="play-button" onClick={props.onPlay}><span>▶</span>PLAY</button>
+      <button className="play-button" onClick={props.onPlay}>
+        <span>▶</span>
+        <div><b>{props.hasContinue ? 'CONTINUE' : 'PLAY'}</b>{props.hasContinue && <small>Level {props.savedLevel + 1}</small>}</div>
+      </button>
+      {props.pinkUnlocked && (
+        <div className="car-picker">
+          <span>YOUR CAR</span>
+          <div>
+            <button className={props.car === 'blue' ? 'selected blue' : 'blue'} onClick={() => props.onCar('blue')}>●</button>
+            <button className={props.car === 'pink' ? 'selected pink' : 'pink'} onClick={() => props.onCar('pink')}>●</button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
 
 export default function App() {
   const [screen, setScreen] = useState('home')
-  const [level, setLevel] = useState(0)
+  const [savedLevel, setSavedLevel] = useState(() => Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0')))
+  const [adventureComplete, setAdventureComplete] = useState(() => localStorage.getItem('carkeys-complete') === '1')
+  const [pinkUnlocked, setPinkUnlocked] = useState(() => localStorage.getItem('carkeys-pink') === '1')
+  const [car, setCar] = useState(() => localStorage.getItem('carkeys-car') || 'blue')
+  const [level, setLevel] = useState(() => Math.min(LEVELS.length - 1, Number(localStorage.getItem('carkeys-level') || '0')))
   const [step, setStep] = useState(0)
   const [lane, setLane] = useState(1)
   const [pulse, setPulse] = useState(0)
@@ -289,7 +423,8 @@ export default function App() {
   }, [screen, target, won])
 
   function start() {
-    setLevel(0)
+    const nextLevel = adventureComplete ? 0 : savedLevel
+    setLevel(nextLevel)
     setStep(0)
     setLane(1)
     setPulse(0)
@@ -298,13 +433,21 @@ export default function App() {
     setScreen('play')
   }
 
+  function chooseCar(id) {
+    setCar(id)
+    localStorage.setItem('carkeys-car', id)
+  }
+
   function nextLevel() {
     if (isLastLevel) {
-      start()
+      setScreen('home')
       return
     }
 
-    setLevel((value) => value + 1)
+    const next = level + 1
+    setLevel(next)
+    setSavedLevel(next)
+    localStorage.setItem('carkeys-level', String(next))
     setStep(0)
     setLane(1)
     setPulse(performance.now())
@@ -340,15 +483,26 @@ export default function App() {
     if (next >= pattern.length) {
       setWon(true)
       window.setTimeout(playWin, 120)
+
+      if (isLastLevel) {
+        setPinkUnlocked(true)
+        setAdventureComplete(true)
+        localStorage.setItem('carkeys-pink', '1')
+        localStorage.setItem('carkeys-complete', '1')
+      } else {
+        const upcoming = level + 1
+        setSavedLevel(upcoming)
+        localStorage.setItem('carkeys-level', String(upcoming))
+      }
     }
   }
 
-  if (screen === 'home') return <Home onPlay={start} />
+  if (screen === 'home') return <Home onPlay={start} hasContinue={!adventureComplete && savedLevel > 0} savedLevel={savedLevel} pinkUnlocked={pinkUnlocked} car={car} onCar={chooseCar} />
 
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} />
+        <GameCanvas lane={lane} pulse={pulse} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} car={car} />
         <div className="level-badge">LEVEL {level + 1} · {currentLevel.name}</div>
         <button className="home-button" onClick={() => setScreen('home')}>⌂</button>
         {!won && (
@@ -360,10 +514,11 @@ export default function App() {
           <div className="win-card">
             <div className="big-star">★</div>
             <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
-            <h2>{isLastLevel ? 'YOU DID IT!' : 'NICE DRIVE!'}</h2>
-            <button onClick={nextLevel}>{isLastLevel ? 'PLAY AGAIN' : 'NEXT ▶'}</button>
+            <h2>{isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
+            {isLastLevel && <div className="unlock-car">★ PINK POP ★</div>}
+            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : 'NEXT ▶'}</button>
             <button className="secondary" onClick={replayLevel}>AGAIN</button>
-            <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>
+            {!isLastLevel && <button className="tertiary" onClick={() => setScreen('home')}>HOME</button>}
           </div>
         )}
       </div>
