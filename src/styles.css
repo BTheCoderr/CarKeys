@@ -445,3 +445,55 @@ button{font:inherit;border:0;touch-action:manipulation}
   .level-intro span{font-size:27px}
   .hit-pop{bottom:18%;font-size:18px}
 }
+
+
+/* v0.8 — musical world transitions */
+.world-splash{
+  position:absolute;
+  z-index:27;
+  left:50%;
+  top:48%;
+  width:min(82%,360px);
+  transform:translate(-50%,-50%);
+  padding:18px 18px 20px;
+  border:6px solid #fff;
+  border-radius:30px;
+  text-align:center;
+  color:#fff;
+  background:linear-gradient(#4dbbff,#1d72d8);
+  box-shadow:0 10px 0 #0f4f9c,0 20px 42px #183f6559;
+  pointer-events:none;
+  animation:worldSplash 1.22s cubic-bezier(.18,.86,.26,1) forwards
+}
+.world-splash.forest{background:linear-gradient(#61d87f,#278f51);box-shadow:0 10px 0 #17683a,0 20px 42px #1d52385c}
+.world-splash.mountain{background:linear-gradient(#ffd46f,#ca8829);box-shadow:0 10px 0 #8b5b18,0 20px 42px #65471f55}
+.world-splash.space{background:linear-gradient(#a383ff,#5835bd);box-shadow:0 10px 0 #3d2689,0 20px 42px #2b1f5f66}
+.world-splash small{
+  display:block;
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.18em;
+  opacity:.9
+}
+.world-splash b{
+  display:block;
+  margin-top:5px;
+  font-size:30px;
+  line-height:1;
+  text-shadow:0 3px 0 #0002
+}
+.world-splash span{
+  display:block;
+  margin-top:10px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:#ffffff2b;
+  font-size:13px;
+  font-weight:1000
+}
+@keyframes worldSplash{
+  0%{opacity:0;transform:translate(-50%,-45%) scale(.72)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
+  72%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-56%) scale(.95)}
+}
