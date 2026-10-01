@@ -497,3 +497,225 @@ button{font:inherit;border:0;touch-action:manipulation}
   72%{opacity:1;transform:translate(-50%,-50%) scale(1)}
   100%{opacity:0;transform:translate(-50%,-56%) scale(.95)}
 }
+
+
+/* v0.9 — Free Drive, worlds, completion and parent controls */
+.home-actions{
+  width:min(88%,460px);
+  margin:10px auto 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px
+}
+.home-actions button{
+  min-height:58px;
+  border:4px solid #fff;
+  border-radius:20px;
+  background:linear-gradient(#ffffff,#eaf7ff);
+  color:#285fa6;
+  box-shadow:0 5px 0 #81b7d1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-weight:1000
+}
+.home-actions b{font-size:25px;color:#7a4ee8}
+.home-actions span{font-size:12px}
+.home-actions button:active{transform:translateY(3px)}
+
+.menu-screen{
+  width:min(760px,100%);
+  min-height:100svh;
+  margin:0 auto;
+  padding:22px 16px 34px;
+  background:linear-gradient(#49c9ff,#dcf8ff 70%,#e8ffd9);
+  color:#214f8c;
+  position:relative
+}
+.menu-back{
+  position:absolute;
+  left:16px;
+  top:18px;
+  width:48px;
+  height:48px;
+  border:4px solid #fff;
+  border-radius:50%;
+  background:#2f86e7;
+  color:#fff;
+  font-size:38px;
+  line-height:.8;
+  box-shadow:0 4px 0 #17559f
+}
+.menu-title{text-align:center;padding-top:12px;margin-bottom:22px}
+.menu-title small{font-size:11px;font-weight:1000;letter-spacing:.12em;color:#4b79a6}
+.menu-title h1{margin:3px 0 0;font-size:34px;color:#245ca0}
+.world-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px
+}
+.world-card{
+  min-height:170px;
+  border:5px solid #fff;
+  border-radius:28px;
+  color:#fff;
+  box-shadow:0 7px 0 #0002;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-shadow:0 2px 0 #0002
+}
+.world-card.city{background:linear-gradient(#4cc5ff,#2876d5)}
+.world-card.forest{background:linear-gradient(#65d97f,#2f9557)}
+.world-card.mountain{background:linear-gradient(#ffd56c,#d48a2a)}
+.world-card.space{background:linear-gradient(#9a78ff,#5634bc)}
+.world-card.locked{filter:grayscale(.75);opacity:.55}
+.world-icon{
+  width:62px;height:62px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#ffffff2e;border:4px solid #fff;
+  font-size:34px;font-weight:1000
+}
+.world-card b{font-size:17px}
+.world-card small{font-size:10px;letter-spacing:.12em;font-weight:1000}
+
+.free-hint{
+  position:absolute;
+  left:50%;
+  top:58px;
+  transform:translateX(-50%);
+  padding:7px 13px;
+  border:4px solid #fff;
+  border-radius:999px;
+  background:#ffffffdb;
+  color:#2b61a4;
+  font-size:12px;
+  font-weight:1000;
+  box-shadow:0 4px 0 #6795b2
+}
+.free-controller button{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px
+}
+.free-controller button b{font-size:36px;line-height:1}
+.free-controller button small{font-size:8px;font-weight:1000;letter-spacing:.03em}
+
+.complete-screen{
+  width:min(760px,100%);
+  min-height:100svh;
+  margin:0 auto;
+  padding:26px 16px;
+  display:grid;
+  place-items:center;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 20% 20%,#ffffff55 0 2px,transparent 3px),
+    radial-gradient(circle at 80% 30%,#ffffff88 0 3px,transparent 4px),
+    linear-gradient(#5f41c8,#241c5f);
+  color:#fff
+}
+.complete-stars{
+  position:absolute;
+  top:9%;
+  left:0;right:0;
+  text-align:center;
+  font-size:34px;
+  letter-spacing:16px;
+  color:#ffe56a;
+  animation:completeStars 1.5s ease-in-out infinite alternate
+}
+@keyframes completeStars{to{transform:translateY(-7px) scale(1.06)}}
+.complete-card{
+  width:min(92%,430px);
+  padding:30px 22px;
+  border:6px solid #fff;
+  border-radius:34px;
+  background:#fff9e8;
+  color:#285b9f;
+  box-shadow:0 11px 0 #d79428,0 24px 50px #110b3b77;
+  text-align:center
+}
+.complete-card>small{font-size:11px;font-weight:1000;letter-spacing:.18em;color:#8f6b1d}
+.complete-card h1{margin:8px 0 6px;font-size:31px;line-height:.95}
+.complete-card p{margin:0 0 16px;font-size:12px;font-weight:800;color:#6882a2}
+.complete-cars{
+  display:flex;justify-content:center;gap:10px;margin:10px 0 20px
+}
+.complete-cars span{
+  width:44px;height:35px;border-radius:14px;
+  display:grid;place-items:center;
+  border:4px solid #fff;
+  background:#e9f4ff;
+  color:var(--car);
+  font-size:31px;
+  box-shadow:0 3px 0 #b9c9d9
+}
+.complete-card button{
+  width:100%;min-height:58px;margin-top:9px;
+  border:4px solid #fff;border-radius:19px;
+  background:linear-gradient(#55c0ff,#2977d9);
+  color:#fff;font-weight:1000;font-size:16px;
+  box-shadow:0 5px 0 #174e9a
+}
+.complete-card .complete-primary{
+  background:linear-gradient(#70eb48,#2eb948);
+  box-shadow:0 5px 0 #18842f
+}
+.complete-card .complete-quiet{
+  background:#eef4fb;color:#35629b;box-shadow:0 5px 0 #bdcddd
+}
+
+.parent-overlay{
+  position:fixed;z-index:100;inset:0;
+  display:grid;place-items:center;
+  padding:18px;
+  background:#0e274b88;
+  backdrop-filter:blur(6px)
+}
+.parent-card{
+  width:min(92vw,390px);
+  padding:18px;
+  border:5px solid #fff;
+  border-radius:28px;
+  background:#f7fbff;
+  box-shadow:0 9px 0 #3a6a95,0 22px 48px #16365466;
+  color:#285b95
+}
+.parent-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.parent-head>b{font-size:14px}
+.parent-head button{
+  width:38px;height:38px;border-radius:50%;background:#e6f2ff;color:#285b95;
+  font-size:25px;font-weight:1000
+}
+.parent-card label{
+  display:block;padding:14px;border-radius:18px;background:#eaf5ff;margin-bottom:10px
+}
+.parent-card label span{display:block;font-size:11px;font-weight:1000;margin-bottom:9px}
+.parent-card input{width:100%;accent-color:#2e84e3}
+.parent-toggle,.reset-progress{
+  width:100%;min-height:52px;margin-top:10px;padding:0 14px;
+  border:3px solid #fff;border-radius:17px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#eaf5ff;color:#285b95;font-weight:1000;
+  box-shadow:0 3px 0 #bad2e5
+}
+.reset-progress{
+  justify-content:center;background:#fff0f0;color:#b94255;box-shadow:0 3px 0 #e4bbc1
+}
+.parent-card>small{
+  display:block;margin-top:14px;text-align:center;color:#7d92aa;font-size:9px;font-weight:700
+}
+
+@media(max-width:430px){
+  .world-card{min-height:145px}
+  .world-card b{font-size:14px}
+  .complete-card h1{font-size:27px}
+  .home-actions{margin-top:8px}
+}
