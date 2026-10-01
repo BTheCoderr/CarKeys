@@ -216,6 +216,7 @@ function GameCanvas(props) {
     let frame = 0
     let start = performance.now()
     let carX = 0.5
+    let carLean = 0
 
     function resize() {
       const rect = canvas.getBoundingClientRect()
@@ -501,6 +502,37 @@ function GameCanvas(props) {
         ctx.moveTo(w * (0.39 + 0.22 * (i / 4)), horizonY)
         ctx.lineTo(w * (0.02 + 0.96 * (i / 4)), h)
         ctx.stroke()
+      }
+
+      // Neon guard rails create the stronger arcade-road depth from the new art direction.
+      const railGradient = ctx.createLinearGradient(0, horizonY, 0, h)
+      railGradient.addColorStop(0, 'rgba(113,226,255,.35)')
+      railGradient.addColorStop(1, 'rgba(49,190,255,.95)')
+      ctx.strokeStyle = railGradient
+      ctx.lineWidth = 7
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.moveTo(w * 0.39, horizonY)
+      ctx.lineTo(w * 0.02, h)
+      ctx.moveTo(w * 0.61, horizonY)
+      ctx.lineTo(w * 0.98, h)
+      ctx.stroke()
+
+      // The current target lane glows directly on the road so there is only one obvious goal.
+      if (!wonRef.current) {
+        const laneBottom = [0.16, 0.39, 0.61, 0.84][targetRef.current]
+        const laneTop = [0.43, 0.475, 0.525, 0.57][targetRef.current]
+        ctx.save()
+        ctx.globalAlpha = 0.18 + Math.sin(t * 0.007) * 0.05
+        ctx.strokeStyle = COLORS[targetRef.current]
+        ctx.lineWidth = 18
+        ctx.shadowColor = COLORS[targetRef.current]
+        ctx.shadowBlur = 22
+        ctx.beginPath()
+        ctx.moveTo(w * laneTop, horizonY + 4)
+        ctx.lineTo(w * laneBottom, h)
+        ctx.stroke()
+        ctx.restore()
       }
 
       const scene = sceneRef.current
@@ -879,13 +911,13 @@ function GameCanvas(props) {
 
       if (!wonRef.current) {
         const targetLane = [0.24, 0.41, 0.59, 0.76][targetRef.current]
-        const targetY = h * 0.38 + Math.sin(t * 0.008) * 5
+        const targetY = h * 0.42 + Math.sin(t * 0.008) * 5
         ctx.save()
         ctx.translate(w * targetLane, targetY)
         ctx.shadowColor = COLORS[targetRef.current]
         ctx.shadowBlur = 24
         ctx.beginPath()
-        ctx.arc(0, 0, 34, 0, Math.PI * 2)
+        ctx.arc(0, 0, 29, 0, Math.PI * 2)
         ctx.fillStyle = COLORS[targetRef.current]
         ctx.fill()
         ctx.lineWidth = 5
@@ -893,7 +925,7 @@ function GameCanvas(props) {
         ctx.stroke()
         ctx.shadowBlur = 0
         ctx.fillStyle = '#fff'
-        ctx.font = '1000 31px Arial'
+        ctx.font = '1000 27px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(NOTES[targetRef.current], 0, 2)
@@ -901,7 +933,9 @@ function GameCanvas(props) {
       }
 
       const desiredX = [0.24, 0.41, 0.59, 0.76][laneRef.current]
-      carX += (desiredX - carX) * 0.12
+      const laneDelta = desiredX - carX
+      carX += laneDelta * 0.11
+      carLean += ((laneDelta * 0.9) - carLean) * 0.16
       const pulseAge = performance.now() - pulseRef.current
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
       const successAge = performance.now() - successRef.current
@@ -948,7 +982,7 @@ function GameCanvas(props) {
       const jumpHeight = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
       const spinTilt = actionRef.current === 'spin' && actionAge < 560 ? actionProgress * Math.PI * 2 : 0
 
-      drawCar(w * carX, h * 0.80, carScale, t, Math.max(pop, successPop), spinTilt, jumpHeight)
+      drawCar(w * carX, h * 0.80, carScale, t, Math.max(pop, successPop), spinTilt + carLean, jumpHeight)
 
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
@@ -1365,8 +1399,6 @@ export default function App() {
 
   function press(index) {
     if (won) return
-    setLane(index)
-    setPulse(performance.now())
     setWrong(false)
     playTone(index, false)
     if (haptics) {
@@ -1380,6 +1412,8 @@ export default function App() {
     }
 
     const now = performance.now()
+    setLane(index)
+    setPulse(now)
     setSuccessPulse(now)
     setLastHit(index)
     playSpark(index)
@@ -1495,26 +1529,28 @@ export default function App() {
         )}
         {cheer && <div key={successPulse} className="hit-pop">{cheer}</div>}
         <button className="home-button" onClick={goHome}>⌂</button>
-        {!won && (
-          <div className={wrong ? 'prompt wrong' : 'prompt'}>
-            {wrong ? 'TRY AGAIN' : <span>TAP <b>{NOTES[target]}</b></span>}
-          </div>
-        )}
+        {wrong && <div className="prompt wrong">TRY AGAIN</div>}
         {won && (
-          <div className="win-card">
+          <div className="win-card compact-win">
             <div className="win-confetti" aria-hidden="true">
-              {Array.from({length: 14}, (_, i) => <i key={i} style={{ '--i': i }} />)}
+              {Array.from({length: 12}, (_, i) => <i key={i} style={{ '--i': i }} />)}
             </div>
-            <div className="big-star">★</div>
-            <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
-            <h2>{level === 9 || level === 14 || level === 19 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
+            <div className="win-summary">
+              <div className="big-star">★</div>
+              <div>
+                <div className="level-complete">LEVEL {level + 1} COMPLETE</div>
+                <h2>{level === 9 || level === 14 || level === 19 || isLastLevel ? 'NEW CAR!' : 'NICE DRIVE!'}</h2>
+              </div>
+            </div>
             {level === 9 && <div className="unlock-car">★ PINK POP ★</div>}
             {level === 14 && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
             {level === 19 && <div className="unlock-car gold-reward">★ SUMMIT SPARK ★</div>}
             {isLastLevel && <div className="unlock-car purple-reward">★ GALAXY GLIDE ★</div>}
-            <button onClick={nextLevel}>{isLastLevel ? 'CELEBRATE ▶' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
-            <button className="secondary" onClick={replayLevel}>AGAIN</button>
-            {!isLastLevel && <button className="tertiary" onClick={goHome}>HOME</button>}
+            <button className="next-drive" onClick={nextLevel}>{isLastLevel ? 'CELEBRATE ▶' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
+            <div className="win-small-actions">
+              <button className="secondary" onClick={replayLevel}>AGAIN</button>
+              {!isLastLevel && <button className="tertiary" onClick={goHome}>HOME</button>}
+            </div>
           </div>
         )}
       </div>
