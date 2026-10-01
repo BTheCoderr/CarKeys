@@ -26,6 +26,33 @@ function carUpgradeTier(level) {
   return 0
 }
 
+function missionHitCopy(scene, step) {
+  const hits = {
+    lights: ['LIGHT!', 'GLOW!'],
+    bridge: ['LIFT!', 'OPEN!'],
+    tunnel: ['POWER!', 'ZAP!'],
+    music: ['PLAY!', 'JAM!'],
+    rabbit: ['BOUNCE!', 'HOP!'],
+    fireflies: ['GOT ONE!', 'GLOW!'],
+    drums: ['BOOM!', 'BEAT!'],
+    owl: ['HOOT!', 'WAKE!'],
+    parade: ['PARADE!', 'GO!'],
+    rocks: ['CLIMB!', 'STEP!'],
+    waterfall: ['FLOW!', 'SPLASH!'],
+    crystals: ['SHINE!', 'GLOW!'],
+    beacons: ['LIGHT!', 'BEAM!'],
+    summit: ['CLIMB!', 'UP!'],
+    launch: ['CHARGE!', 'BOOST!'],
+    stars: ['HOP!', 'STAR!'],
+    rings: ['RING!', 'ORBIT!'],
+    comets: ['CHASE!', 'ZOOM!'],
+    moonconcert: ['ROCK!', 'PLAY!'],
+    finish: ['GO!', 'FAST!'],
+  }
+  const options = hits[scene] || ['NICE!', 'YEAH!', 'GO!']
+  return options[step % options.length]
+}
+
 function missionCopy(scene, patternLength) {
   const copies = {
     drive: 'FOLLOW THE MUSIC',
@@ -749,15 +776,20 @@ function GameCanvas(props) {
       }
 
       if (scene === 'fireflies') {
+        const gatherX = w * 0.50
+        const gatherY = h * 0.34
         for (let i = 0; i < patternRef.current.length; i += 1) {
-          const x = w * (0.16 + i * 0.18)
-          const y = h * (0.40 + (i % 2) * 0.08)
+          const caught = i < completed
+          const baseX = w * (0.16 + i * 0.18)
+          const baseY = h * (0.40 + (i % 2) * 0.08)
+          const x = caught ? gatherX + Math.cos(t * 0.005 + i) * (12 + i * 2) : baseX + Math.sin(t * 0.008 + i) * 10
+          const y = caught ? gatherY + Math.sin(t * 0.006 + i) * (9 + i) : baseY + Math.cos(t * 0.009 + i) * 7
           ctx.save()
           ctx.shadowColor = '#fff16b'
-          ctx.shadowBlur = i < completed ? 25 : 0
+          ctx.shadowBlur = caught ? 28 : 10
           ctx.beginPath()
-          ctx.arc(x, y, 8, 0, Math.PI * 2)
-          ctx.fillStyle = i < completed ? '#fff16b' : '#61806a'
+          ctx.arc(x, y, caught ? 7 : 6, 0, Math.PI * 2)
+          ctx.fillStyle = caught ? '#fff16b' : '#9aa66f'
           ctx.fill()
           ctx.restore()
         }
@@ -916,15 +948,20 @@ function GameCanvas(props) {
         const power = Math.min(1, completed / Math.max(1, patternRef.current.length))
         const x = w * 0.50
         const y = h * 0.44
+        const launchAge = performance.now() - successRef.current
+        const liftoff = wonRef.current ? Math.min(1, launchAge / 900) : 0
         ctx.save()
-        ctx.translate(x, y - power * 18)
+        ctx.translate(x, y - power * 18 - liftoff * h * 0.46)
         ctx.fillStyle = '#f2f7ff'
         ctx.beginPath()
         ctx.moveTo(0, -34);ctx.lineTo(18, 10);ctx.lineTo(10, 28);ctx.lineTo(-10, 28);ctx.lineTo(-18, 10);ctx.closePath();ctx.fill()
         ctx.fillStyle='#ff5a73'
         ctx.fillRect(-7,-4,14,20)
         ctx.fillStyle = power > 0 ? '#ffd45d' : '#7f8498'
-        ctx.beginPath();ctx.moveTo(-8,28);ctx.lineTo(0,28+34*power);ctx.lineTo(8,28);ctx.closePath();ctx.fill()
+        ctx.save()
+        if (power > 0) { ctx.shadowColor = '#ff9e44'; ctx.shadowBlur = 22 }
+        ctx.beginPath();ctx.moveTo(-9,28);ctx.lineTo(0,28+36*power+24*liftoff);ctx.lineTo(9,28);ctx.closePath();ctx.fill()
+        ctx.restore()
         ctx.restore()
       }
 
@@ -962,13 +999,19 @@ function GameCanvas(props) {
 
       if (scene === 'comets') {
         for(let i=0;i<patternRef.current.length;i+=1){
-          const x=w*(0.13+i*.17)
-          const y=h*(0.34+(i%2)*.07)
+          const drift = ((t * (0.015 + i * 0.0015)) + i * 84) % (w + 100) - 50
+          const baseX = w * (0.13 + i * .17)
+          const x = i < completed ? baseX : baseX * .35 + drift * .65
+          const y = h * (0.34 + (i % 2) * .07) + Math.sin(t * .007 + i) * 8
+          ctx.save()
           ctx.strokeStyle=i<completed?COLORS[i%COLORS.length]:'#656982'
+          ctx.shadowColor=i<completed?COLORS[i%COLORS.length]:'transparent'
+          ctx.shadowBlur=i<completed?14:0
           ctx.lineWidth=5
-          ctx.beginPath();ctx.moveTo(x-24,y-14);ctx.lineTo(x,y);ctx.stroke()
+          ctx.beginPath();ctx.moveTo(x-30,y-16);ctx.lineTo(x,y);ctx.stroke()
           ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2)
           ctx.fillStyle=i<completed?'#fff2a8':'#74788f';ctx.fill()
+          ctx.restore()
         }
       }
 
@@ -1192,7 +1235,11 @@ function GameCanvas(props) {
 
       const actionAge = performance.now() - actionPulseRef.current
       const actionProgress = Math.min(1, Math.max(0, actionAge / 560))
-      const jumpHeight = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
+      const freeJump = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
+      const missionJumpAge = performance.now() - successRef.current
+      const missionJumpProgress = Math.min(1, Math.max(0, missionJumpAge / 500))
+      const missionJump = sceneRef.current === 'stars' && missionJumpAge < 500 ? Math.sin(missionJumpProgress * Math.PI) * 34 : 0
+      const jumpHeight = Math.max(freeJump, missionJump)
       const spinTilt = actionRef.current === 'spin' && actionAge < 560 ? actionProgress * Math.PI * 2 : 0
       const arcadeLean = Math.max(-0.16, Math.min(0.16, carLean))
 
@@ -1638,7 +1685,7 @@ export default function App() {
     if (haptics) {
       try { navigator.vibrate?.([12, 22]) } catch {}
     }
-    setCheer(step % 3 === 0 ? 'NICE!' : step % 3 === 1 ? 'YEAH!' : 'GO!')
+    setCheer(missionHitCopy(currentLevel.scene, step))
     window.setTimeout(() => setCheer(''), 330)
 
     const next = step + 1
