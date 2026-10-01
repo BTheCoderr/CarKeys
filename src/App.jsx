@@ -47,6 +47,7 @@ const WORLD_NAMES = {
 }
 
 let audioContext
+let masterVolume = 1
 let worldMusicTimer
 let worldMusicWorld
 let worldMusicBeat = 0
@@ -59,6 +60,7 @@ function ensureAudio() {
 
 function playWorldPulse(world, beat) {
   try {
+    if (masterVolume <= 0) return
     const context = ensureAudio()
     const bases = { city: 130.81, forest: 110, mountain: 146.83, space: 98 }
     const shapes = { city: 'triangle', forest: 'sine', mountain: 'triangle', space: 'sine' }
@@ -73,7 +75,7 @@ function playWorldPulse(world, beat) {
     oscillator.frequency.value = base * steps[beat % steps.length]
     filter.type = 'lowpass'
     filter.frequency.value = world === 'space' ? 850 : 1200
-    gain.gain.setValueAtTime(0.018, now)
+    gain.gain.setValueAtTime(0.018 * masterVolume, now)
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.23)
 
     oscillator.connect(filter).connect(gain).connect(context.destination)
@@ -85,7 +87,7 @@ function playWorldPulse(world, beat) {
       const accentGain = context.createGain()
       accent.type = 'sine'
       accent.frequency.value = base / 2
-      accentGain.gain.setValueAtTime(0.02, now)
+      accentGain.gain.setValueAtTime(0.02 * masterVolume, now)
       accentGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16)
       accent.connect(accentGain).connect(context.destination)
       accent.start(now)
@@ -127,6 +129,7 @@ function playWorldStinger(world) {
 
 function playTone(index, soft) {
   try {
+    if (masterVolume <= 0) return
     ensureAudio()
 
     const oscillator = audioContext.createOscillator()
@@ -139,7 +142,7 @@ function playTone(index, soft) {
     filter.type = 'lowpass'
     filter.frequency.value = soft ? 1200 : 1900
 
-    gain.gain.setValueAtTime(soft ? 0.07 : 0.16, now)
+    gain.gain.setValueAtTime((soft ? 0.07 : 0.16) * masterVolume, now)
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28)
 
     oscillator.connect(filter).connect(gain).connect(audioContext.destination)
@@ -150,13 +153,13 @@ function playTone(index, soft) {
 
 function playSpark(index) {
   try {
-    if (!audioContext) return
+    if (!audioContext || masterVolume <= 0) return
     const oscillator = audioContext.createOscillator()
     const gain = audioContext.createGain()
     const now = audioContext.currentTime
     oscillator.type = 'sine'
     oscillator.frequency.value = FREQUENCIES[index] * 2
-    gain.gain.setValueAtTime(0.045, now + 0.035)
+    gain.gain.setValueAtTime(0.045 * masterVolume, now + 0.035)
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18)
     oscillator.connect(gain).connect(audioContext.destination)
     oscillator.start(now + 0.035)
@@ -183,6 +186,8 @@ function GameCanvas(props) {
   const worldRef = useRef(props.world)
   const successRef = useRef(props.successPulse)
   const lastHitRef = useRef(props.lastHit)
+  const actionRef = useRef(props.freeAction)
+  const actionPulseRef = useRef(props.actionPulse)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -195,6 +200,8 @@ function GameCanvas(props) {
   useEffect(() => { worldRef.current = props.world }, [props.world])
   useEffect(() => { successRef.current = props.successPulse }, [props.successPulse])
   useEffect(() => { lastHitRef.current = props.lastHit }, [props.lastHit])
+  useEffect(() => { actionRef.current = props.freeAction }, [props.freeAction])
+  useEffect(() => { actionPulseRef.current = props.actionPulse }, [props.actionPulse])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -225,9 +232,10 @@ function GameCanvas(props) {
       }
     }
 
-    function drawCar(x, y, scale, t, pop) {
+    function drawCar(x, y, scale, t, pop, tilt = 0, extraY = 0) {
       ctx.save()
-      ctx.translate(x, y + Math.sin(t * 0.006) * 2 - pop * 9)
+      ctx.translate(x, y + Math.sin(t * 0.006) * 2 - pop * 9 - extraY)
+      ctx.rotate(tilt)
       ctx.scale(scale, scale)
 
       ctx.fillStyle = 'rgba(23,62,89,.28)'
@@ -763,7 +771,9 @@ function GameCanvas(props) {
       ctx.lineWidth = 5
       ctx.setLineDash([28, 32])
       const roadBoostAge = performance.now() - successRef.current
-      const roadSpeed = roadBoostAge < 430 ? 0.42 : 0.16
+      const actionAgeForRoad = performance.now() - actionPulseRef.current
+      const turboing = actionRef.current === 'turbo' && actionAgeForRoad < 700
+      const roadSpeed = turboing ? 0.72 : roadBoostAge < 430 ? 0.42 : 0.16
       ctx.lineDashOffset = (t * roadSpeed) % 80
       ctx.beginPath()
       ctx.moveTo(w * 0.5, horizonY)
@@ -837,7 +847,12 @@ function GameCanvas(props) {
         ctx.restore()
       }
 
-      drawCar(w * carX, h * 0.82, carScale, t, Math.max(pop, successPop))
+      const actionAge = performance.now() - actionPulseRef.current
+      const actionProgress = Math.min(1, Math.max(0, actionAge / 560))
+      const jumpHeight = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
+      const spinTilt = actionRef.current === 'spin' && actionAge < 560 ? actionProgress * Math.PI * 2 : 0
+
+      drawCar(w * carX, h * 0.82, carScale, t, Math.max(pop, successPop), spinTilt, jumpHeight)
 
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
