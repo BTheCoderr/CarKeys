@@ -3,6 +3,25 @@ import { useEffect, useRef, useState } from 'react'
 const NOTES = ['C', 'D', 'E', 'F']
 const COLORS = ['#2f8cff', '#f052a0', '#ffd23d', '#47cf62']
 const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
+const BASE_BUTTON_COUNT = 4
+
+function levelSpeed(level) {
+  // Keep the first world relaxed, then raise the road pace gently every five levels.
+  return Math.min(1.5, 1 + Math.floor(level / 5) * 0.10)
+}
+
+function laneX(index, count = BASE_BUTTON_COUNT, horizon = false) {
+  if (count === 4) {
+    const near = [0.24, 0.41, 0.59, 0.76]
+    const far = [0.43, 0.48, 0.52, 0.57]
+    return (horizon ? far : near)[Math.max(0, Math.min(index, 3))]
+  }
+
+  const start = horizon ? 0.42 : 0.14
+  const span = horizon ? 0.16 : 0.72
+  return start + (span * Math.max(0, Math.min(index, count - 1))) / Math.max(1, count - 1)
+}
+
 const LEVELS = [
   { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0], scene: 'drive', world: 'city' },
   { name: 'TWO KEYS', pattern: [0, 1, 0, 1], scene: 'drive', world: 'city' },
@@ -195,6 +214,7 @@ function GameCanvas(props) {
   const lastHitRef = useRef(props.lastHit)
   const actionRef = useRef(props.freeAction)
   const actionPulseRef = useRef(props.actionPulse)
+  const speedRef = useRef(props.speed || 1)
 
   useEffect(() => { laneRef.current = props.lane }, [props.lane])
   useEffect(() => { progressRef.current = props.progress }, [props.progress])
@@ -209,6 +229,7 @@ function GameCanvas(props) {
   useEffect(() => { lastHitRef.current = props.lastHit }, [props.lastHit])
   useEffect(() => { actionRef.current = props.freeAction }, [props.freeAction])
   useEffect(() => { actionPulseRef.current = props.actionPulse }, [props.actionPulse])
+  useEffect(() => { speedRef.current = props.speed || 1 }, [props.speed])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -217,6 +238,8 @@ function GameCanvas(props) {
     let start = performance.now()
     let carX = 0.5
     let carLean = 0
+    let targetBorn = performance.now()
+    let lastProgress = progressRef.current
 
     function resize() {
       const rect = canvas.getBoundingClientRect()
@@ -520,8 +543,8 @@ function GameCanvas(props) {
 
       // The current target lane glows directly on the road so there is only one obvious goal.
       if (!wonRef.current) {
-        const laneBottom = [0.16, 0.39, 0.61, 0.84][targetRef.current]
-        const laneTop = [0.43, 0.475, 0.525, 0.57][targetRef.current]
+        const laneBottom = laneX(targetRef.current)
+        const laneTop = laneX(targetRef.current, BASE_BUTTON_COUNT, true)
         ctx.save()
         ctx.globalAlpha = 0.18 + Math.sin(t * 0.007) * 0.05
         ctx.strokeStyle = COLORS[targetRef.current]
@@ -901,7 +924,8 @@ function GameCanvas(props) {
       const roadBoostAge = performance.now() - successRef.current
       const actionAgeForRoad = performance.now() - actionPulseRef.current
       const turboing = actionRef.current === 'turbo' && actionAgeForRoad < 700
-      const roadSpeed = turboing ? 0.72 : roadBoostAge < 430 ? 0.42 : 0.16
+      const baseRoadSpeed = 0.16 * speedRef.current
+      const roadSpeed = turboing ? 0.74 * speedRef.current : roadBoostAge < 430 ? 0.43 * speedRef.current : baseRoadSpeed
       ctx.lineDashOffset = (t * roadSpeed) % 80
       ctx.beginPath()
       ctx.moveTo(w * 0.5, horizonY)
@@ -909,15 +933,28 @@ function GameCanvas(props) {
       ctx.stroke()
       ctx.setLineDash([])
 
+      if (progressRef.current !== lastProgress) {
+        lastProgress = progressRef.current
+        targetBorn = performance.now()
+      }
+
       if (!wonRef.current) {
-        const targetLane = [0.24, 0.41, 0.59, 0.76][targetRef.current]
-        const targetY = h * 0.42 + Math.sin(t * 0.008) * 5
+        const targetAge = performance.now() - targetBorn
+        const approach = Math.min(1, targetAge / (1450 / speedRef.current))
+        const eased = 1 - Math.pow(1 - approach, 2)
+        const farX = laneX(targetRef.current, BASE_BUTTON_COUNT, true)
+        const nearX = laneX(targetRef.current)
+        const targetLane = farX + (nearX - farX) * eased
+        const targetY = h * (0.51 + 0.17 * eased)
+        const targetScale = 0.64 + eased * 0.36
+
         ctx.save()
         ctx.translate(w * targetLane, targetY)
+        ctx.scale(targetScale, targetScale)
         ctx.shadowColor = COLORS[targetRef.current]
-        ctx.shadowBlur = 24
+        ctx.shadowBlur = 26
         ctx.beginPath()
-        ctx.arc(0, 0, 29, 0, Math.PI * 2)
+        ctx.arc(0, 0, 30, 0, Math.PI * 2)
         ctx.fillStyle = COLORS[targetRef.current]
         ctx.fill()
         ctx.lineWidth = 5
@@ -925,17 +962,17 @@ function GameCanvas(props) {
         ctx.stroke()
         ctx.shadowBlur = 0
         ctx.fillStyle = '#fff'
-        ctx.font = '1000 27px Arial'
+        ctx.font = '1000 28px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(NOTES[targetRef.current], 0, 2)
         ctx.restore()
       }
 
-      const desiredX = [0.24, 0.41, 0.59, 0.76][laneRef.current]
+      const desiredX = laneX(laneRef.current)
       const laneDelta = desiredX - carX
-      carX += laneDelta * 0.11
-      carLean += ((laneDelta * 0.9) - carLean) * 0.16
+      carX += laneDelta * 0.13
+      carLean += ((laneDelta * 1.1) - carLean) * 0.18
       const pulseAge = performance.now() - pulseRef.current
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
       const successAge = performance.now() - successRef.current
@@ -1095,7 +1132,7 @@ function FreeDrive({ car, world, haptics, onBack }) {
   const [lastHit, setLastHit] = useState(0)
   const [action, setAction] = useState('')
   const [actionPulse, setActionPulse] = useState(0)
-  const actions = ['JUMP', 'SWERVE', 'TURBO', 'SPIN']
+  const actions = ['LEFT', 'RIGHT', 'TURBO', 'HOP']
 
   useEffect(() => {
     startWorldMusic(world)
@@ -1110,9 +1147,10 @@ function FreeDrive({ car, world, haptics, onBack }) {
     setPulse(now)
     setSuccessPulse(now)
     setActionPulse(now)
-    setAction(['jump', 'swerve', 'turbo', 'spin'][index])
+    setAction(index === 2 ? 'turbo' : index === 3 ? 'jump' : 'swerve')
 
-    if (index === 1) setLane((value) => (value + 1) % 4)
+    if (index === 0) setLane((value) => Math.max(0, value - 1))
+    if (index === 1) setLane((value) => Math.min(BASE_BUTTON_COUNT - 1, value + 1))
     if (haptics) {
       try { navigator.vibrate?.(index === 2 ? 26 : 14) } catch {}
     }
@@ -1135,6 +1173,7 @@ function FreeDrive({ car, world, haptics, onBack }) {
           car={car}
           freeAction={action}
           actionPulse={actionPulse}
+          speed={1.15}
         />
         <div className={'level-badge '+world}>FREE DRIVE · {WORLD_NAMES[world]}</div>
         <button className="home-button" onClick={onBack}>⌂</button>
@@ -1504,7 +1543,7 @@ export default function App() {
   return (
     <section className="play-screen">
       <div className="stage-wrap">
-        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
+        <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} speed={levelSpeed(level)} />
         <div className={'game-hud '+currentLevel.world}>
           <div className="hud-copy">
             <b>LEVEL {level + 1}</b>
