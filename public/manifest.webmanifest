@@ -1,0 +1,19 @@
+{
+  "name": "CarKeys",
+  "short_name": "CarKeys",
+  "description": "Tap the keys. Drive the car.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#48c9ff",
+  "theme_color": "#48c9ff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
