@@ -286,3 +286,20 @@ button{font:inherit;border:0;touch-action:manipulation}
   box-shadow:0 5px 0 #aa6e16;
   text-shadow:0 2px 0 #8f5d14
 }
+
+
+/* v0.6 — Space Beat expansion */
+.level-badge.space{
+  background:linear-gradient(#8b66f2,#5936be);
+  box-shadow:0 4px 0 #3f278c;
+  text-shadow:0 2px 0 #3d247e
+}
+.car-picker button.purple{
+  color:#7a4ee8;
+  background:#eee6ff
+}
+.purple-reward{
+  background:linear-gradient(#b893ff,#764ee2);
+  box-shadow:0 5px 0 #4e2bb2;
+  text-shadow:0 2px 0 #432598
+}
