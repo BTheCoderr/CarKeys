@@ -1430,7 +1430,7 @@ export default function App() {
             {level === 14 && <div className="unlock-car green-reward">★ FOREST FLASH ★</div>}
             {level === 19 && <div className="unlock-car gold-reward">★ SUMMIT SPARK ★</div>}
             {isLastLevel && <div className="unlock-car purple-reward">★ GALAXY GLIDE ★</div>}
-            <button onClick={nextLevel}>{isLastLevel ? 'GO HOME' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
+            <button onClick={nextLevel}>{isLastLevel ? 'CELEBRATE ▶' : level === 9 || level === 14 || level === 19 ? 'NEXT WORLD ▶' : 'NEXT ▶'}</button>
             <button className="secondary" onClick={replayLevel}>AGAIN</button>
             {!isLastLevel && <button className="tertiary" onClick={goHome}>HOME</button>}
           </div>
