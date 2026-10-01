@@ -719,3 +719,224 @@ button{font:inherit;border:0;touch-action:manipulation}
   .complete-card h1{font-size:27px}
   .home-actions{margin-top:8px}
 }
+
+
+/* v1 visual reset — inspired by the approved sporty CarKeys concept */
+:root{
+  background:#0e77ce;
+  color:#183f77
+}
+html,body,#root{background:#0e77ce}
+
+.home-screen{
+  background:linear-gradient(#46cfff 0 62%,#c7f2ff 62% 70%,#79dc73 70%);
+  padding-bottom:22px
+}
+.home-scene{
+  height:72svh;
+  min-height:520px;
+  margin:0 -10px;
+  background:
+    radial-gradient(circle at 84% 15%,rgba(255,255,255,.95) 0 35px,transparent 36px),
+    linear-gradient(#47ceff 0 58%,#c7f3ff 58% 64%,#6fd36c 64%)
+}
+.home-scene:before{
+  width:126px;height:49px;top:122px;left:-18px;
+  box-shadow:42px 4px 0 #fff,88px 12px 0 #fff
+}
+.home-scene:after{
+  width:112px;height:44px;top:188px;right:-18px;
+  box-shadow:-38px 4px 0 #fff,-79px 10px 0 #fff
+}
+.logo{
+  top:48px;
+  font-size:clamp(50px,13vw,78px);
+  letter-spacing:-4px;
+  text-shadow:0 4px 0 #1a5ca8,0 9px 18px #174e8c4f
+}
+.home-copy{top:130px;font-size:15px}
+.home-road{
+  left:-4%;right:-4%;bottom:-17%;height:61%;
+  clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);
+  background:#264b62;
+  border-top:4px solid #74dfff;
+  box-shadow:inset 0 0 0 3px #16394c
+}
+.home-road:after{
+  left:49.2%;width:1.7%;
+  background:repeating-linear-gradient(#fff 0 26px,transparent 26px 56px)
+}
+.home-car{bottom:12%}
+.mini-car{
+  width:244px;height:112px;
+  border:0;
+  border-radius:52% 52% 31% 31%/56% 56% 42% 42%;
+  background:linear-gradient(165deg,var(--car-roof,#56c8ff) 0 32%,var(--car-body,#1788e6) 33% 100%);
+  box-shadow:0 11px 0 #103b64,0 17px 24px #123d5f4d;
+  transform:perspective(320px) rotateX(4deg)
+}
+.mini-car:before,.mini-car:after{
+  bottom:-14px;width:46px;height:48px;border-radius:50%;
+  background:#13263b;border:5px solid #304e61;
+  box-shadow:inset 0 0 0 8px #456777
+}
+.mini-car:before{left:24px}.mini-car:after{right:24px}
+.mini-window{
+  top:9px;width:69px;height:42px;
+  background:linear-gradient(#e7fbff,#85d7ef);
+  border:4px solid #fff;border-radius:22px
+}
+.mini-window.left{left:47px;transform:skewX(-9deg)}
+.mini-window.right{right:47px;transform:skewX(9deg)}
+.mini-eye{top:28px;width:11px;height:11px;background:#15385d}
+.mini-eye.left{left:79px}.mini-eye.right{right:79px}
+.mini-smile{top:67px;width:46px;height:17px;border-bottom-width:4px}
+.mini-car::after{}
+.home-car:after{
+  content:"";
+  position:absolute;
+  left:50%;top:49px;
+  width:18px;height:62px;
+  transform:translateX(-50%);
+  border-left:8px solid rgba(255,255,255,.95);
+  border-right:8px solid rgba(255,255,255,.95);
+  pointer-events:none
+}
+.play-button{
+  width:min(86%,430px);min-height:78px;
+  border-radius:26px;
+  background:linear-gradient(#60e95b,#29bd4d);
+  box-shadow:0 7px 0 #11843a,0 13px 22px #124b5035;
+  font-size:30px
+}
+.play-button span{width:50px;height:50px}
+.home-actions.single{
+  width:min(72%,360px);
+  grid-template-columns:1fr
+}
+
+.play-screen{
+  background:#0c75c6;
+  padding:0;
+  gap:0;
+  grid-template-rows:minmax(0,1fr) 112px
+}
+.stage-wrap{
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background:#45cfff
+}
+.game-canvas{background:#45cfff}
+
+.game-hud{
+  position:absolute;
+  z-index:21;
+  left:14px;right:68px;top:14px;
+  min-height:58px;
+  padding:9px 13px 10px;
+  border:3px solid rgba(255,255,255,.96);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(19,120,217,.94),rgba(11,84,169,.94));
+  color:#fff;
+  box-shadow:0 5px 0 rgba(7,62,129,.75),0 10px 24px #143e6c38
+}
+.game-hud.forest{background:linear-gradient(#4fcf72,#218d4e);box-shadow:0 5px 0 #146d3b}
+.game-hud.mountain{background:linear-gradient(#efb84b,#be7920);box-shadow:0 5px 0 #875514}
+.game-hud.space{background:linear-gradient(#8c65ed,#5531b4);box-shadow:0 5px 0 #39227e}
+.hud-copy{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.hud-copy b{font-size:15px;letter-spacing:.04em}
+.hud-copy span{font-size:10px;font-weight:1000;letter-spacing:.08em;opacity:.9}
+.hud-progress{
+  height:9px;
+  margin-top:7px;
+  padding:2px;
+  border-radius:999px;
+  background:#ffffff42;
+  overflow:hidden
+}
+.hud-progress i{
+  display:block;height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#ffe75d,#fff7a9);
+  box-shadow:0 0 10px #ffe85f
+}
+
+.home-button{
+  top:16px;right:14px;
+  width:48px;height:48px;
+  border:3px solid #fff;
+  background:linear-gradient(#53c5ff,#2177d6);
+  box-shadow:0 4px 0 #0d4a90
+}
+.prompt{
+  top:86px;
+  min-width:126px;
+  padding:7px 15px;
+  border-width:3px;
+  border-radius:18px;
+  font-size:14px;
+  box-shadow:0 4px 0 #d48f22
+}
+.prompt b{font-size:24px;margin-left:4px}
+
+.controller{
+  position:relative;
+  z-index:40;
+  gap:7px;
+  padding:8px;
+  border:0;
+  border-radius:0;
+  background:linear-gradient(#095699,#063c78);
+  box-shadow:inset 0 4px 0 #ffffff22
+}
+.controller button{
+  height:96px;
+  border:4px solid #fff;
+  border-radius:21px;
+  font-size:43px;
+  box-shadow:
+    inset 0 -10px 0 #0002,
+    inset 0 3px 0 #ffffff5c,
+    0 5px 0 #042e5a;
+  text-shadow:0 3px 0 #0002
+}
+.controller button:nth-child(2){color:#fff;text-shadow:0 3px 0 #0002}
+.controller button.hint{
+  outline:5px solid #fff477;
+  outline-offset:-1px;
+  box-shadow:inset 0 -10px 0 #0002,0 5px 0 #042e5a,0 0 24px #fff06dcc
+}
+.controller button:active{transform:translateY(5px) scale(.97)}
+
+.level-intro{
+  top:52%;
+  width:min(70%,300px);
+  padding:12px 16px;
+  border-width:4px;
+  border-radius:22px
+}
+.level-intro b{font-size:19px}
+.level-intro span{font-size:24px}
+.hit-pop{bottom:20%;font-size:17px}
+
+.win-card{
+  width:min(80%,330px);
+  padding:20px 16px;
+  border-radius:26px
+}
+.big-star{font-size:66px}
+.win-card h2{font-size:28px;margin:8px 0 12px}
+.win-card button{min-height:54px}
+
+@media(max-width:430px){
+  .home-scene{height:69svh;min-height:485px}
+  .logo{top:44px;font-size:55px}
+  .home-copy{top:122px}
+  .mini-car{width:218px;height:102px}
+  .home-car:after{top:45px;height:57px}
+  .play-screen{grid-template-rows:minmax(0,1fr) 104px}
+  .controller button{height:88px;font-size:39px}
+  .game-hud{left:10px;right:62px;top:10px}
+  .home-button{top:12px;right:10px}
+}
