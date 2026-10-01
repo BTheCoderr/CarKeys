@@ -999,7 +999,7 @@ export default function App() {
     setLane(1)
     setPulse(performance.now())
     setSuccessPulse(0)
-    setWorldSplash('')
+    if (!changingWorld) setWorldSplash('')
     setCheer('')
     setIntroId((value) => value + 1)
     setWon(false)
