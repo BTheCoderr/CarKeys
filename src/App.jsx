@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 const NOTES = ['C', 'D', 'E', 'F']
-const COLORS = ['#ff4f88', '#ffd43d', '#55d84a', '#9b4cf0']
+const COLORS = ['#2f8cff', '#f052a0', '#ffd23d', '#47cf62']
 const FREQUENCIES = [261.63, 293.66, 329.63, 349.23]
 const LEVELS = [
   { name: 'FIRST DRIVE', pattern: [0, 0, 0, 0], scene: 'drive', world: 'city' },
@@ -241,43 +241,132 @@ function GameCanvas(props) {
 
     function drawCar(x, y, scale, t, pop, tilt = 0, extraY = 0) {
       ctx.save()
-      ctx.translate(x, y + Math.sin(t * 0.006) * 2 - pop * 9 - extraY)
+      ctx.translate(x, y + Math.sin(t * 0.006) * 2 - pop * 10 - extraY)
       ctx.rotate(tilt)
       ctx.scale(scale, scale)
 
-      ctx.fillStyle = 'rgba(23,62,89,.28)'
-      ctx.beginPath()
-      ctx.ellipse(0, 27, 48, 11, 0, 0, Math.PI * 2)
-      ctx.fill()
-
       const car = CARS[carRef.current] || CARS.blue
-      roundedRect(-50, -24, 100, 54, 23, car.body, '#ffffff', 4)
-      roundedRect(-31, -38, 62, 31, 15, car.roof, '#ffffff', 4)
-      roundedRect(-23, -30, 19, 16, 7, '#dff7ff', null, 0)
-      roundedRect(4, -30, 19, 16, 7, '#dff7ff', null, 0)
-
-      ctx.fillStyle = '#0f3761'
-      ctx.beginPath()
-      ctx.arc(-13, -22, 4, 0, Math.PI * 2)
-      ctx.arc(13, -22, 4, 0, Math.PI * 2)
-      ctx.fill()
-
       const happyAge = performance.now() - successRef.current
       const happy = happyAge < 420
-      ctx.strokeStyle = '#0f3761'
-      ctx.lineWidth = happy ? 4 : 3
-      ctx.beginPath()
-      ctx.arc(0, happy ? -2 : -5, happy ? 17 : 12, 0.2, Math.PI - 0.2)
-      ctx.stroke()
 
-      ctx.fillStyle = '#ffef72'
+      // Ground shadow
+      ctx.fillStyle = 'rgba(10,35,58,.30)'
       ctx.beginPath()
-      ctx.arc(-37, 2, 7, 0, Math.PI * 2)
-      ctx.arc(37, 2, 7, 0, Math.PI * 2)
+      ctx.ellipse(0, 36, 61, 13, 0, 0, Math.PI * 2)
       ctx.fill()
 
-      roundedRect(-43, 23, 22, 17, 8, '#17324f', null, 0)
-      roundedRect(21, 23, 22, 17, 8, '#17324f', null, 0)
+      // Tires first so the body overlaps them naturally.
+      ;[-40, 40].forEach((wheelX) => {
+        ctx.fillStyle = '#11263d'
+        ctx.beginPath()
+        ctx.ellipse(wheelX, 23, 18, 23, 0, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#456173'
+        ctx.beginPath()
+        ctx.arc(wheelX, 23, 8, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#bfe7f5'
+        ctx.beginPath()
+        ctx.arc(wheelX, 23, 3, 0, Math.PI * 2)
+        ctx.fill()
+      })
+
+      // Main sporty body.
+      ctx.save()
+      ctx.shadowColor = car.body
+      ctx.shadowBlur = 15
+      ctx.fillStyle = car.body
+      ctx.beginPath()
+      ctx.moveTo(-58, 12)
+      ctx.quadraticCurveTo(-57, -14, -36, -22)
+      ctx.quadraticCurveTo(-22, -43, 0, -46)
+      ctx.quadraticCurveTo(24, -43, 38, -22)
+      ctx.quadraticCurveTo(58, -13, 60, 12)
+      ctx.quadraticCurveTo(58, 31, 40, 36)
+      ctx.lineTo(-40, 36)
+      ctx.quadraticCurveTo(-58, 31, -58, 12)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
+      // Windshield/cabin.
+      const glass = ctx.createLinearGradient(0, -42, 0, -5)
+      glass.addColorStop(0, '#dff7ff')
+      glass.addColorStop(1, '#83d3ef')
+      ctx.fillStyle = glass
+      ctx.beginPath()
+      ctx.moveTo(-31, -20)
+      ctx.quadraticCurveTo(-18, -42, 0, -44)
+      ctx.quadraticCurveTo(19, -42, 32, -20)
+      ctx.quadraticCurveTo(23, -8, 0, -7)
+      ctx.quadraticCurveTo(-23, -8, -31, -20)
+      ctx.closePath()
+      ctx.fill()
+      ctx.lineWidth = 4
+      ctx.strokeStyle = '#ffffff'
+      ctx.stroke()
+
+      // White racing stripes, inspired by the concept art.
+      ctx.fillStyle = 'rgba(255,255,255,.92)'
+      ctx.beginPath()
+      ctx.moveTo(-11, -43)
+      ctx.lineTo(-5, -43)
+      ctx.lineTo(-8, 33)
+      ctx.lineTo(-18, 33)
+      ctx.closePath()
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(5, -43)
+      ctx.lineTo(11, -43)
+      ctx.lineTo(18, 33)
+      ctx.lineTo(8, 33)
+      ctx.closePath()
+      ctx.fill()
+
+      // Windshield eyes.
+      ctx.fillStyle = '#163a61'
+      ctx.beginPath()
+      ctx.ellipse(-12, -23, 6, happy ? 4 : 6, 0, 0, Math.PI * 2)
+      ctx.ellipse(12, -23, 6, happy ? 4 : 6, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(-10, -25, 2, 0, Math.PI * 2)
+      ctx.arc(14, -25, 2, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Hood highlights.
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.moveTo(-37, -5)
+      ctx.quadraticCurveTo(0, 8, 37, -5)
+      ctx.stroke()
+
+      // Headlights.
+      ;[-40, 40].forEach((lightX) => {
+        ctx.save()
+        ctx.shadowColor = '#fff2a0'
+        ctx.shadowBlur = 11
+        ctx.fillStyle = '#fff27c'
+        ctx.beginPath()
+        ctx.ellipse(lightX, 5, 9, 6, 0, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      })
+
+      // Friendly bumper smile.
+      ctx.strokeStyle = '#10365d'
+      ctx.lineWidth = happy ? 4 : 3
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.arc(0, 8, happy ? 19 : 15, 0.2, Math.PI - 0.2)
+      ctx.stroke()
+
+      // Front bumper / grille.
+      roundedRect(-31, 25, 62, 9, 5, '#17324f', null, 0)
+      roundedRect(-19, 27, 38, 4, 2, '#8bb7c9', null, 0)
+
       ctx.restore()
     }
 
@@ -396,7 +485,7 @@ function GameCanvas(props) {
       }
 
       const horizonY = h * 0.52
-      ctx.fillStyle = '#7488a5'
+      ctx.fillStyle = '#254a62'
       ctx.beginPath()
       ctx.moveTo(w * 0.39, horizonY)
       ctx.lineTo(w * 0.61, horizonY)
@@ -405,7 +494,7 @@ function GameCanvas(props) {
       ctx.closePath()
       ctx.fill()
 
-      ctx.strokeStyle = 'rgba(255,255,255,.45)'
+      ctx.strokeStyle = 'rgba(84,205,255,.52)'
       ctx.lineWidth = 2
       for (let i = 1; i < 4; i += 1) {
         ctx.beginPath()
@@ -817,7 +906,7 @@ function GameCanvas(props) {
       const pop = pulseAge < 240 ? Math.max(0, 1 - pulseAge / 240) : 0
       const successAge = performance.now() - successRef.current
       const successPop = successAge < 420 ? Math.max(0, 1 - successAge / 420) : 0
-      const carScale = Math.min(w / 430, 1.1) * (1 + successPop * 0.06)
+      const carScale = Math.min(w / 360, 1.32) * (1 + successPop * 0.06)
 
       if (successPop > 0) {
         const boostColor = COLORS[lastHitRef.current] || '#fff27a'
@@ -859,7 +948,7 @@ function GameCanvas(props) {
       const jumpHeight = actionRef.current === 'jump' && actionAge < 560 ? Math.sin(actionProgress * Math.PI) * 54 : 0
       const spinTilt = actionRef.current === 'spin' && actionAge < 560 ? actionProgress * Math.PI * 2 : 0
 
-      drawCar(w * carX, h * 0.82, carScale, t, Math.max(pop, successPop), spinTilt, jumpHeight)
+      drawCar(w * carX, h * 0.80, carScale, t, Math.max(pop, successPop), spinTilt, jumpHeight)
 
       const pattern = patternRef.current
       for (let i = 0; i < pattern.length; i += 1) {
@@ -928,22 +1017,8 @@ function Home(props) {
       </button>
 
       {props.pinkUnlocked && (
-        <div className="home-actions">
+        <div className="home-actions single">
           <button onClick={props.onFreeDrive}><b>∞</b><span>FREE DRIVE</span></button>
-          <button onClick={props.onWorlds}><b>◎</b><span>WORLDS</span></button>
-        </div>
-      )}
-
-      {props.pinkUnlocked && (
-        <div className="car-picker">
-          <span>YOUR CAR</span>
-          <div>
-            <button className={props.car === 'blue' ? 'selected blue' : 'blue'} onClick={() => props.onCar('blue')}>●</button>
-            <button className={props.car === 'pink' ? 'selected pink' : 'pink'} onClick={() => props.onCar('pink')}>●</button>
-            {props.greenUnlocked && <button className={props.car === 'green' ? 'selected green' : 'green'} onClick={() => props.onCar('green')}>●</button>}
-            {props.goldUnlocked && <button className={props.car === 'gold' ? 'selected gold' : 'gold'} onClick={() => props.onCar('gold')}>●</button>}
-            {props.purpleUnlocked && <button className={props.car === 'purple' ? 'selected purple' : 'purple'} onClick={() => props.onCar('purple')}>●</button>}
-          </div>
         </div>
       )}
     </section>
@@ -1356,8 +1431,7 @@ export default function App() {
         <Home
           onPlay={start}
           onFreeDrive={() => setScreen('free')}
-          onWorlds={() => setScreen('worlds')}
-          onParents={() => setParentOpen(true)}
+           onParents={() => setParentOpen(true)}
           hasContinue={!adventureComplete && savedLevel > 0}
           savedLevel={savedLevel}
           pinkUnlocked={pinkUnlocked}
@@ -1397,7 +1471,15 @@ export default function App() {
     <section className="play-screen">
       <div className="stage-wrap">
         <GameCanvas lane={lane} pulse={pulse} successPulse={successPulse} lastHit={lastHit} progress={step} target={target} won={won} pattern={pattern} scene={currentLevel.scene} world={currentLevel.world} car={car} />
-        <div className={'level-badge '+currentLevel.world}>{WORLD_NAMES[currentLevel.world]} · LEVEL {level + 1} · {currentLevel.name}</div>
+        <div className={'game-hud '+currentLevel.world}>
+          <div className="hud-copy">
+            <b>LEVEL {level + 1}</b>
+            <span>{WORLD_NAMES[currentLevel.world]}</span>
+          </div>
+          <div className="hud-progress">
+            <i style={{ width: Math.max(10, (step / pattern.length) * 100) + '%' }} />
+          </div>
+        </div>
         {worldSplash ? (
           <div className={'world-splash '+currentLevel.world}>
             <small>NEW WORLD</small>
