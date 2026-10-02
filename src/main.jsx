@@ -5,10 +5,12 @@ import LearningHUD from './LearningHUD.jsx'
 import GameJuice from './GameJuice.jsx'
 import MissionDirector from './MissionDirector.jsx'
 import BossDirector from './BossDirector.jsx'
+import GarageRewards from './GarageRewards.jsx'
 import './styles.css'
 import './road-events.css'
 import './missions.css'
 import './bosses.css'
+import './garage.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -17,6 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <GameJuice />
     <MissionDirector />
     <BossDirector />
+    <GarageRewards />
   </React.StrictMode>,
 )
 
