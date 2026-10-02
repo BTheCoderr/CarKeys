@@ -1,63 +1,46 @@
 # CarKeys
 
-<!-- repo-intro:start -->
-**Project snapshot:** CarKeys is a kid-first music-and-driving game concept where piano input powers motion, rhythm, stories, and playful challenges so learning happens through play instead of feeling like a lesson.
+**CarKeys is a kid-first music, driving, and learning game where playing notes powers the car and changes the world.** The goal is simple: make the player feel like they are playing a car game while note recognition, rhythm, listening, memory, sequencing, spelling, and vocabulary develop underneath the fun.
 
-**What it demonstrates:** game-product design · music/rhythm interaction · child-friendly UX · story-driven learning · accessibility through simplified modes.
-<!-- repo-intro:end -->
+## Product rule
 
-<!-- portfolio-refresh:start -->
-## Build target
+**Fun first. Learning through play.** CarKeys should never stop the adventure to feel like a worksheet. See or hear something, play it, make the car react, and get an immediate satisfying result.
 
-CarKeys is still at the product/design stage, so this repository is intentionally honest about what exists today. The implementation target is a kid-first playable experience with:
+## Current playable experience
 
-| System | Direction |
-| --- | --- |
-| Input | Piano/keyboard notes and rhythm timing |
-| Game response | Vehicle movement, obstacles, boosts, story reactions |
-| Learning layer | Rhythm, listening, sequencing, memory, basic note relationships |
-| Progression | Short story-led levels and playful mastery |
-| Accessibility | Twin Mode with fewer choices, larger controls, less text, stronger cues |
-| Platforms | Web/mobile-friendly architecture once the first playable loop is locked |
+The web build now includes a 25-level adventure with themed worlds, multiple cars and upgrades, Free Drive, short missions, musical C/D/E/F controls, progressive note difficulty, word collection, rhythm timing, and listen-and-play-back memory challenges.
 
-### Product rule
+### Learning progression
 
-**Fun first. Educational second.** The musical learning should emerge from play rather than feeling like a lesson with a car skin on top.
+| Stage | Game feeling | Learning underneath |
+| --- | --- | --- |
+| Music City | Drive, explore, hit targets | Note recognition + simple words |
+| Rhythm Forest | Race to the beat | Timing + sequencing + vocabulary |
+| Melody Mountain | Hear and copy musical routes | Listening + musical memory |
+| Space Beat | Bigger musical adventures | Combined notes, rhythm, memory and patterns |
 
-The next meaningful milestone is a small playable vertical slice—not more concept copy.
-<!-- portfolio-refresh:end -->
+## Design principles
 
-## Product direction
+- The car is part of the lesson, not decoration around it.
+- One obvious action at a time for younger players.
+- Immediate visual, audio, movement, and haptic feedback.
+- Mistakes should feel recoverable and playful rather than punitive.
+- Difficulty grows gradually by adding notes, timing, memory, and reduced assistance.
+- New cars, places, effects, and mission moments keep progression rewarding.
+- Learning UI stays contextual so the road remains the star of the screen.
 
-CarKeys combines two things kids already understand intuitively: **cars** and **music**.
+## Controls
 
-Instead of presenting a traditional piano lesson, the game turns musical input into movement, timing, character moments, and story progression. The goal is to teach rhythm, listening, sequencing, memory, and basic musical relationships without making the experience feel like school.
+The current beginner musical controls use **C, D, E, and F**. Levels introduce complexity gradually instead of presenting every challenge at once.
 
-## Core experience
+## Tech
 
-- Drive and react through musical input
-- Story-led levels instead of random key prompts
-- Rhythm and timing challenges that make the music matter
-- Visual feedback that stays synchronized with the sound/action
-- Kid-friendly progression with clear goals
-- Learning outcomes hidden inside play
+- React 18
+- Vite
+- Browser Web Audio
+- Responsive web/PWA-oriented interface
+- Local progression for fast, account-free play
 
-## Twin Mode
+## Status
 
-Twin Mode is the simplified experience for younger players.
-
-The rest of the game can keep richer modes and mechanics, while Twin Mode reduces cognitive load:
-
-- fewer choices on screen
-- clearer next action
-- bigger, easier controls
-- less text
-- stronger visual/audio cues
-- short story moments and simple success feedback
-
-The rule is simple: **make it fun first, educational second, and never make the learning feel obvious.**
-
-## Repository status
-
-This repository is the product/design home for CarKeys. Implementation work can grow here as the game moves from concept and interface prototypes into a playable web/mobile build.
-
+CarKeys is an active playable prototype. The current focus is consolidating the game and learning systems into a clean shared gameplay loop, polishing all 25 levels on mobile, improving world-specific mechanics, and adding automated progression/regression tests before expanding the mechanic set further.
