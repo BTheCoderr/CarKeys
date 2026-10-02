@@ -4,6 +4,7 @@ import App from './App.jsx'
 import LearningHUD from './LearningHUD.jsx'
 import GameJuice from './GameJuice.jsx'
 import './styles.css'
+import './road-events.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
