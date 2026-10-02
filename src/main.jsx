@@ -4,9 +4,11 @@ import App from './App.jsx'
 import LearningHUD from './LearningHUD.jsx'
 import GameJuice from './GameJuice.jsx'
 import MissionDirector from './MissionDirector.jsx'
+import BossDirector from './BossDirector.jsx'
 import './styles.css'
 import './road-events.css'
 import './missions.css'
+import './bosses.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -14,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <LearningHUD />
     <GameJuice />
     <MissionDirector />
+    <BossDirector />
   </React.StrictMode>,
 )
 
