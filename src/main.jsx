@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import SpellingCoach from './SpellingCoach.jsx'
 import RhythmRoad from './RhythmRoad.jsx'
+import ListenDrive from './ListenDrive.jsx'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -10,6 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
     <SpellingCoach />
     <RhythmRoad />
+    <ListenDrive />
   </React.StrictMode>,
 )
 
