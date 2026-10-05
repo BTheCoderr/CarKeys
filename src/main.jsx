@@ -8,6 +8,7 @@ import BossDirector from './BossDirector.jsx'
 import GarageRewards from './GarageRewards.jsx'
 import EquippedRewardEffects from './EquippedRewardEffects.jsx'
 import ProgressGuard from './ProgressGuard.jsx'
+import AdventureHardening from './AdventureHardening.jsx'
 import './styles.css'
 import './road-events.css'
 import './missions.css'
@@ -18,6 +19,7 @@ import './reward-effects.css'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ProgressGuard />
+    <AdventureHardening />
     <App />
     <LearningHUD />
     <GameJuice />
