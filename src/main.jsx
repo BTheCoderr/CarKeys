@@ -6,11 +6,13 @@ import GameJuice from './GameJuice.jsx'
 import MissionDirector from './MissionDirector.jsx'
 import BossDirector from './BossDirector.jsx'
 import GarageRewards from './GarageRewards.jsx'
+import EquippedRewardEffects from './EquippedRewardEffects.jsx'
 import './styles.css'
 import './road-events.css'
 import './missions.css'
 import './bosses.css'
 import './garage.css'
+import './reward-effects.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -20,6 +22,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <MissionDirector />
     <BossDirector />
     <GarageRewards />
+    <EquippedRewardEffects />
   </React.StrictMode>,
 )
 
